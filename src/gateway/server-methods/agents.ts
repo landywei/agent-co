@@ -5,6 +5,7 @@ import {
   resolveAgentDir,
   resolveAgentWorkspaceDir,
 } from "../../agents/agent-scope.js";
+import { resolveOrgStatus } from "../../agents/status.js";
 import {
   DEFAULT_AGENTS_FILENAME,
   DEFAULT_BOOTSTRAP_FILENAME,
@@ -529,5 +530,26 @@ export const agentsHandlers: GatewayRequestHandlers = {
       },
       undefined,
     );
+  },
+
+  "agents.status": async ({ respond, context }) => {
+    try {
+      const cfg = loadConfig();
+      let taskStore: import("../../tasks/store.js").TaskStore | undefined;
+      try {
+        const { getTaskStore } = await import("../../tasks/index.js");
+        taskStore = getTaskStore();
+      } catch {
+        /* task store may not be available */
+      }
+      const status = await resolveOrgStatus({
+        config: cfg,
+        cronService: context.cron,
+        taskStore,
+      });
+      respond(true, status);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
   },
 };

@@ -97,5 +97,8 @@ package-lock.json
 .agents
 .agent/
 
+# Config backup with real credentials
+config-backup.json
+
 # Local iOS signing overrides
 apps/ios/LocalSigning.xcconfig

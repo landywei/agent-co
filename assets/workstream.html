@@ -714,6 +714,55 @@ select.topbar-select {
 }
 .round-indicator .ri-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lego-yellow); animation: pulse 1.2s infinite; border: 1.5px solid #D4A800; }
 
+/* ── Task Monitor ── */
+.task-stat {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 18px; background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius); min-width: 80px;
+}
+.task-stat-n { font-size: 24px; font-weight: 900; color: var(--c, var(--text)); line-height: 1; }
+.task-stat-l { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.task-card {
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; cursor: pointer; transition: all 0.15s;
+}
+.task-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow); }
+.task-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.task-detail-grid { display: flex; flex-direction: column; gap: 4px; }
+.task-detail-row { display: flex; gap: 8px; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--bg2); }
+.task-detail-key { font-weight: 700; color: var(--text-muted); min-width: 80px; }
+.task-detail-val { color: var(--text); }
+.task-log-list { display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto; }
+.task-log-entry { display: flex; gap: 8px; padding: 8px 10px; background: var(--bg2); border-radius: 8px; }
+.task-log-icon { font-size: 14px; flex-shrink: 0; padding-top: 1px; }
+.task-log-body { flex: 1; min-width: 0; }
+
+/* ── Agent Status Monitor ── */
+.agent-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.agent-status-card {
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; transition: border-color 0.15s;
+}
+.agent-status-card[data-live="active"] { border-left: 4px solid var(--green); }
+.agent-status-card[data-live="idle"] { border-left: 4px solid var(--amber); }
+.agent-status-card[data-live="stale"] { border-left: 4px solid var(--accent); }
+.agent-status-card[data-live="offline"] { border-left: 4px solid var(--text-dim); }
+.agent-liveness {
+  display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 2px 8px; border-radius: 6px;
+}
+.agent-liveness[data-live="active"] { background: var(--green-bg); color: var(--green); }
+.agent-liveness[data-live="idle"] { background: var(--amber-bg); color: #B8920A; }
+.agent-liveness[data-live="stale"] { background: rgba(227,0,11,0.08); color: var(--accent); }
+.agent-liveness[data-live="offline"] { background: var(--bg2); color: var(--text-dim); }
+.org-totals { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.org-total-chip {
+  display: flex; align-items: center; gap: 6px; padding: 6px 14px;
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  font-size: 13px; font-weight: 700;
+}
+.org-total-dot { width: 10px; height: 10px; border-radius: 50%; }
+
 </style>
 </head>
 <body>
@@ -729,6 +778,9 @@ select.topbar-select {
   </button>
   <button class="rail-btn" id="railChannels" onclick="setView('channels')" title="Channels">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="13" y2="12"/></svg>
+  </button>
+  <button class="rail-btn" id="railTasks" onclick="setView('tasks')" title="Tasks">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
   </button>
   <div class="rail-spacer"></div>
   <button class="rail-btn" onclick="showConnectModal()" title="Gateway">
@@ -861,7 +913,7 @@ const ACCESS = ['full','elevated','standard','readonly'];
 const BASE_WORKSPACE = '~/.openclaw/workspaces';
 const PUBLIC_WORKSPACE = '~/.openclaw/workspace/public';
 
-let state = { positions: [], selectedId: null, activeTab: 'details', view: 'org', kb: {}, kbSelected: null, deployed: false, deployedIds: [], channels: [], selectedChannelId: null, companyGoal: '' };
+let state = { positions: [], selectedId: null, activeTab: 'details', view: 'org', kb: {}, kbSelected: null, deployed: false, deployedIds: [], channels: [], selectedChannelId: null, companyGoal: '', tasks: [], taskSummary: null, selectedTaskId: null, taskLogs: {}, orgStatus: null };
 
 /* ═══════════════════════════════════════
    KNOWLEDGE BASE — Live from disk (dynamic discovery)
@@ -1085,6 +1137,7 @@ function setView(v) {
   document.getElementById('railOrg').classList.toggle('active', v === 'org');
   document.getElementById('railKb').classList.toggle('active', v === 'kb');
   document.getElementById('railChannels').classList.toggle('active', v === 'channels');
+  document.getElementById('railTasks').classList.toggle('active', v === 'tasks');
   document.getElementById('templateSelect').style.display = v === 'org' ? '' : 'none';
   const rp = document.getElementById('rightPanel');
   const topTitle = document.getElementById('topbarTitle');
@@ -1123,6 +1176,19 @@ function setView(v) {
     renderChannelsNav();
     renderChannelCanvas();
     renderChannelDetails();
+  } else if (v === 'tasks') {
+    document.getElementById('navTitle').textContent = 'Tasks';
+    document.getElementById('panelTabs').style.display = 'none';
+    topTitle.textContent = 'Monitor';
+    topSub.textContent = 'Agent status & task threads';
+    topAct.innerHTML = '<button class="btn btn-sm" onclick="refreshTasks();refreshOrgStatus()">⟳ Refresh</button>';
+    footer.innerHTML = '';
+    refreshTasks();
+    refreshOrgStatus();
+    startTaskAutoRefresh();
+    renderTasksNav();
+    renderTasksCanvas();
+    renderTaskDetails();
   }
 }
 
@@ -2554,6 +2620,7 @@ function doConnect(optUrl, optToken) {
     if(msg.type==='event'&&msg.event==='company.channel.message') { handleCompanyChannelMessage(msg.payload); return; }
     if(msg.type==='event'&&msg.event==='company.channel.created') { handleCompanyChannelCreated(msg.payload); return; }
     if(msg.type==='event'&&msg.event==='company.channel.member.joined') { handleCompanyChannelMemberJoined(msg.payload); return; }
+    if(msg.type==='event'&&msg.event?.startsWith('task.')) { handleTaskEvent(msg.event, msg.payload); return; }
   };
   ws.onerror = ()=>{ err.textContent='Connection failed'; err.style.display='block'; };
   ws.onclose = ()=>{
@@ -2803,6 +2870,275 @@ function exportAllKb() {
       URL.revokeObjectURL(u);
     }
   });
+}
+
+/* ═══════════════════════════════════════
+   TASKS — Long-horizon task monitoring
+   ═══════════════════════════════════════ */
+let taskRefreshTimer = null;
+
+async function refreshOrgStatus() {
+  try {
+    const r = await fetch('/agents-status.json');
+    if (!r.ok) { return; }
+    state.orgStatus = await r.json();
+    if (state.view === 'tasks') {
+      renderTasksCanvas();
+    }
+  } catch {}
+}
+
+async function refreshTasks() {
+  try {
+    const r = await fetch('/tasks-data.json');
+    if (!r.ok) return;
+    const d = await r.json();
+    state.tasks = d.tasks || [];
+    state.taskSummary = d.summary || null;
+    if (state.view === 'tasks') {
+      const topSub = document.getElementById('topbarSub');
+      if (state.taskSummary) {
+        const s = state.taskSummary;
+        topSub.textContent = `${s.active} active · ${s.blocked} blocked · ${s.done} done · ${s.failed} failed${s.stale ? ' · ' + s.stale + ' stale' : ''}`;
+      }
+      renderTasksNav();
+      renderTasksCanvas();
+    }
+  } catch {}
+}
+
+async function fetchTaskLogs(taskId) {
+  try {
+    const r = await fetch(`/tasks-data.json?view=detail&taskId=${encodeURIComponent(taskId)}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    state.taskLogs[taskId] = d.logs || [];
+    if (d.task) {
+      const idx = state.tasks.findIndex(t => t.id === taskId);
+      if (idx >= 0) state.tasks[idx] = d.task;
+    }
+    renderTaskDetails();
+  } catch {}
+}
+
+function selectTask(id) {
+  state.selectedTaskId = id;
+  renderTasksNav();
+  renderTasksCanvas();
+  fetchTaskLogs(id);
+}
+
+function renderTasksNav() {
+  const list = document.getElementById('navList');
+  const statusIcon = { active: '🟢', blocked: '🔴', waiting: '🟡', done: '✅', failed: '❌' };
+  const priorityLabel = { critical: '‼️', high: '❗', medium: '', low: '↓' };
+
+  const grouped = {};
+  for (const t of state.tasks) {
+    if (!grouped[t.agentId]) grouped[t.agentId] = [];
+    grouped[t.agentId].push(t);
+  }
+
+  let html = '';
+  for (const [agentId, tasks] of Object.entries(grouped)) {
+    const activeCount = tasks.filter(t => t.status === 'active' || t.status === 'blocked').length;
+    html += `<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">${esc(agentId)} <span style="font-weight:400;opacity:0.7">(${activeCount} active)</span></div>`;
+    for (const t of tasks) {
+      if (t.status === 'done' || t.status === 'failed') continue;
+      const active = t.id === state.selectedTaskId ? ' active' : '';
+      const stale = t.lastHeartbeatAt && (Date.now() - t.lastHeartbeatAt > 15 * 60 * 1000);
+      const staleTag = stale ? '<span style="color:var(--accent);font-size:10px;margin-left:4px" title="No heartbeat for 15+ min">⚠ stale</span>' : '';
+      html += `<div class="nav-item${active}" onclick="selectTask('${t.id}')">
+        <span class="item-icon">${statusIcon[t.status] || '○'}</span>
+        <span class="item-label">${priorityLabel[t.priority] || ''}${esc(t.objective.slice(0,50))}${t.objective.length > 50 ? '…' : ''}${staleTag}</span>
+      </div>`;
+    }
+  }
+
+  if (!state.tasks.length) {
+    html = '<div style="padding:20px 14px;color:var(--text-muted);font-size:13px">No tasks yet. Agents create tasks using the task_manage tool.</div>';
+  }
+  list.innerHTML = html;
+}
+
+function renderTasksCanvas() {
+  const c = document.getElementById('canvas');
+  const org = state.orgStatus;
+
+  // Org status section
+  let orgHtml = '';
+  if (org && org.agents && org.agents.length > 0) {
+    const liveColors = { active: 'var(--green)', idle: '#B8920A', stale: 'var(--accent)', offline: 'var(--text-dim)' };
+    const totals = org.totals || {};
+    orgHtml = `
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:12px">Org Status</h2>
+      <div class="org-totals">
+        <div class="org-total-chip"><span class="org-total-dot" style="background:var(--green)"></span>${totals.active || 0} active</div>
+        <div class="org-total-chip"><span class="org-total-dot" style="background:#B8920A"></span>${totals.idle || 0} idle</div>
+        <div class="org-total-chip"><span class="org-total-dot" style="background:var(--accent)"></span>${totals.stale || 0} stale</div>
+        <div class="org-total-chip"><span class="org-total-dot" style="background:var(--text-dim)"></span>${totals.offline || 0} offline</div>
+        <div class="org-total-chip" style="margin-left:auto;font-size:11px;color:var(--text-muted)">${org.agents.length} agents total</div>
+      </div>
+      <div class="agent-status-grid">
+        ${org.agents.map(a => `
+          <div class="agent-status-card" data-live="${a.liveness}">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:18px">${a.emoji || '🤖'}</span>
+              <span style="font-weight:800;font-size:14px;flex:1">${esc(a.name)}</span>
+              <span class="agent-liveness" data-live="${a.liveness}">${a.liveness}</span>
+            </div>
+            ${a.layer ? `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">${esc(a.layer)}</div>` : ''}
+            ${a.role ? `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">${esc(a.role.slice(0,80))}</div>` : ''}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text-dim)">
+              <span>Last: ${a.lastActivityAt ? timeSince(a.lastActivityAt) : 'never'}</span>
+              ${a.nextActivityAt ? `<span>Next: ${timeSince(a.nextActivityAt).replace(' ago','')}</span>` : ''}
+              <span>${a.sessionCount} session${a.sessionCount !== 1 ? 's' : ''}</span>
+            </div>
+            ${(a.activeTasks || a.blockedTasks) ? `<div style="margin-top:6px;display:flex;gap:8px;font-size:11px">
+              ${a.activeTasks ? `<span style="color:var(--green);font-weight:700">${a.activeTasks} active task${a.activeTasks !== 1 ? 's' : ''}</span>` : ''}
+              ${a.blockedTasks ? `<span style="color:var(--accent);font-weight:700">${a.blockedTasks} blocked</span>` : ''}
+            </div>` : ''}
+          </div>`).join('')}
+      </div>
+      <div style="border-top:2px solid var(--border);margin:24px 0 20px"></div>`;
+  }
+
+  // Task threads section
+  if (!state.tasks.length && !org?.agents?.length) {
+    c.innerHTML = `<div class="canvas-empty"><h2>Monitor</h2><p>No agents or tasks yet. Start the gateway and provision agents.<br>Their status and task threads will appear here in real time.</p></div>`;
+    return;
+  }
+
+  const summary = state.taskSummary;
+  const summaryHtml = summary && summary.total > 0 ? `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="task-stat" style="--c:var(--green)"><span class="task-stat-n">${summary.active}</span><span class="task-stat-l">Active</span></div>
+      <div class="task-stat" style="--c:var(--accent)"><span class="task-stat-n">${summary.blocked}</span><span class="task-stat-l">Blocked</span></div>
+      <div class="task-stat" style="--c:var(--rose)"><span class="task-stat-n">${summary.waiting}</span><span class="task-stat-l">Waiting</span></div>
+      <div class="task-stat" style="--c:var(--sky)"><span class="task-stat-n">${summary.done}</span><span class="task-stat-l">Done</span></div>
+      <div class="task-stat" style="--c:var(--text-muted)"><span class="task-stat-n">${summary.failed}</span><span class="task-stat-l">Failed</span></div>
+      ${summary.stale ? `<div class="task-stat" style="--c:var(--accent);background:rgba(227,0,11,0.08)"><span class="task-stat-n">${summary.stale}</span><span class="task-stat-l">⚠ Stale</span></div>` : ''}
+    </div>` : '';
+
+  const statusColor = { active: 'var(--green)', blocked: 'var(--accent)', waiting: 'var(--rose)', done: 'var(--sky)', failed: 'var(--text-muted)' };
+  const tasksHtml = state.tasks.length ? state.tasks.map(t => {
+    const sel = t.id === state.selectedTaskId ? 'border-color:var(--border-active);box-shadow:var(--shadow-lg)' : '';
+    const stale = t.lastHeartbeatAt && (Date.now() - t.lastHeartbeatAt > 15 * 60 * 1000);
+    const hbAgo = t.lastHeartbeatAt ? timeSince(t.lastHeartbeatAt) : 'never';
+    return `<div class="task-card" style="${sel}" onclick="selectTask('${t.id}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="task-status-dot" style="background:${statusColor[t.status] || '#ccc'}"></span>
+        <span style="font-weight:700;font-size:14px;flex:1">${esc(t.objective.slice(0,80))}</span>
+        <span style="font-size:11px;color:var(--text-muted)">${t.priority}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Agent: <strong>${esc(t.agentId)}</strong></div>
+      ${t.progressSummary ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${esc(t.progressSummary.slice(0,120))}</div>` : ''}
+      <div style="display:flex;gap:12px;font-size:11px;color:var(--text-dim)">
+        <span>Created: ${timeSince(t.createdAt)}</span>
+        <span>Heartbeat: ${hbAgo}${stale ? ' <span style="color:var(--accent)">⚠</span>' : ''}</span>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:13px;color:var(--text-dim);padding:8px 0">No task threads yet. Agents create tasks using the task_manage tool.</div>';
+
+  c.innerHTML = `<div style="padding:24px;max-width:900px;margin:0 auto;overflow-y:auto;height:100%">
+    ${orgHtml}
+    ${state.tasks.length ? '<h2 style="font-size:20px;font-weight:800;margin-bottom:16px">Task Threads</h2>' : ''}
+    ${summaryHtml}
+    <div style="display:flex;flex-direction:column;gap:10px">${tasksHtml}</div>
+  </div>`;
+}
+
+function renderTaskDetails() {
+  const body = document.getElementById('panelBody');
+  const t = state.tasks.find(t => t.id === state.selectedTaskId);
+  if (!t) {
+    body.innerHTML = '<div class="no-selection"><p>Select a task to view its details and activity log.</p></div>';
+    return;
+  }
+
+  const logs = state.taskLogs[t.id] || [];
+  const statusColor = { active: 'var(--green)', blocked: 'var(--accent)', waiting: 'var(--rose)', done: 'var(--sky)', failed: 'var(--text-muted)' };
+  const logTypeIcon = { created: '🆕', updated: '✏️', progress: '📝', checkpoint: '🏁', error: '⚠️', heartbeat: '💓', blocked: '🔴', unblocked: '🟢', completed: '✅', failed: '❌', reassigned: '🔄' };
+
+  let html = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="task-status-dot" style="background:${statusColor[t.status] || '#ccc'};width:12px;height:12px"></span>
+        <span style="font-size:16px;font-weight:800">${esc(t.objective)}</span>
+      </div>
+      <div class="task-detail-grid">
+        <div class="task-detail-row"><span class="task-detail-key">Status</span><span class="task-detail-val">${t.status}</span></div>
+        <div class="task-detail-row"><span class="task-detail-key">Priority</span><span class="task-detail-val">${t.priority}</span></div>
+        <div class="task-detail-row"><span class="task-detail-key">Agent</span><span class="task-detail-val">${esc(t.agentId)}</span></div>
+        <div class="task-detail-row"><span class="task-detail-key">Created</span><span class="task-detail-val">${new Date(t.createdAt).toLocaleString()}</span></div>
+        <div class="task-detail-row"><span class="task-detail-key">Updated</span><span class="task-detail-val">${new Date(t.updatedAt).toLocaleString()}</span></div>
+        <div class="task-detail-row"><span class="task-detail-key">Heartbeat</span><span class="task-detail-val">${t.lastHeartbeatAt ? timeSince(t.lastHeartbeatAt) : 'never'}</span></div>
+        ${t.parentTaskId ? `<div class="task-detail-row"><span class="task-detail-key">Parent</span><span class="task-detail-val" style="cursor:pointer;color:var(--sky)" onclick="selectTask('${t.parentTaskId}')">${t.parentTaskId}</span></div>` : ''}
+      </div>
+      ${t.progressSummary ? `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:13px">${esc(t.progressSummary)}</div>` : ''}
+
+      <h3 style="font-size:14px;font-weight:700;margin:20px 0 10px;color:var(--text-secondary)">Activity Log</h3>
+      <div class="task-log-list">
+        ${logs.length ? logs.map(l => `
+          <div class="task-log-entry">
+            <span class="task-log-icon">${logTypeIcon[l.type] || '•'}</span>
+            <div class="task-log-body">
+              <div style="font-size:12px;color:var(--text-muted)">${new Date(l.timestamp).toLocaleString()} · ${esc(l.agentId)} · <strong>${l.type}</strong></div>
+              <div style="font-size:13px;margin-top:2px">${esc(l.message)}</div>
+            </div>
+          </div>`).join('') : '<div style="font-size:13px;color:var(--text-dim);padding:8px 0">No log entries yet</div>'}
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-sm" onclick="fetchTaskLogs('${t.id}')">Refresh Log</button>
+      </div>
+    </div>`;
+
+  body.innerHTML = html;
+  document.getElementById('panelTabs').style.display = '';
+}
+
+function timeSince(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function startTaskAutoRefresh() {
+  stopTaskAutoRefresh();
+  taskRefreshTimer = setInterval(() => { refreshTasks(); refreshOrgStatus(); }, 10000);
+}
+function stopTaskAutoRefresh() {
+  if (taskRefreshTimer) { clearInterval(taskRefreshTimer); taskRefreshTimer = null; }
+}
+
+function handleTaskEvent(event, payload) {
+  if (event === 'task.created' && payload.task) {
+    state.tasks.unshift(payload.task);
+    if (state.view === 'tasks') { renderTasksNav(); renderTasksCanvas(); }
+  } else if (event === 'task.updated' && payload.task) {
+    const idx = state.tasks.findIndex(t => t.id === payload.task.id);
+    if (idx >= 0) state.tasks[idx] = payload.task;
+    else state.tasks.unshift(payload.task);
+    if (state.view === 'tasks') { renderTasksNav(); renderTasksCanvas(); if (state.selectedTaskId === payload.task.id) renderTaskDetails(); }
+  } else if (event === 'task.log' && payload.log) {
+    const tid = payload.log.taskId;
+    if (!state.taskLogs[tid]) state.taskLogs[tid] = [];
+    state.taskLogs[tid].push(payload.log);
+    if (state.view === 'tasks' && state.selectedTaskId === tid) renderTaskDetails();
+  } else if (event === 'task.heartbeat' && payload.taskId) {
+    const t = state.tasks.find(t => t.id === payload.taskId);
+    if (t) t.lastHeartbeatAt = payload.timestamp;
+  } else if (event === 'task.stale' && payload.taskId) {
+    if (state.view === 'tasks') renderTasksNav();
+  } else if (event === 'task.completed' || event === 'task.failed') {
+    if (payload.task) {
+      const idx = state.tasks.findIndex(t => t.id === payload.task.id);
+      if (idx >= 0) state.tasks[idx] = payload.task;
+    }
+    if (state.view === 'tasks') { renderTasksNav(); renderTasksCanvas(); }
+  }
 }
 
 /* ═══════════════════════════════════════

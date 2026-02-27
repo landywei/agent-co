@@ -1,0 +1,30 @@
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "openrouter": {
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "apiKey": "sk-or-your-openrouter-api-key",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "moonshotai/kimi-k2.5",
+            "name": "Kimi K2.5",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0.45, "output": 2.2, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 64000
+          }
+        ]
+      }
+    }
+  },
+  "agents.defaults.model.primary": "openrouter/moonshotai/kimi-k2.5",
+  "agents.defaults.models": {
+    "openrouter/moonshotai/kimi-k2.5": { "alias": "Kimi-K2.5" }
+  },
+  "tools.web.search.apiKey": "your-web-search-api-key",
+  "gateway.auth.token": "your-gateway-auth-token",
+  "skills.okkslides.apiKey": "sk_live_your-okkslides-api-key"
+}

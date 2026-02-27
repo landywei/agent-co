@@ -22,6 +22,8 @@ import { createSessionsListTool } from "./tools/sessions-list-tool.js";
 import { createSessionsSendTool } from "./tools/sessions-send-tool.js";
 import { createSessionsSpawnTool } from "./tools/sessions-spawn-tool.js";
 import { createSubagentsTool } from "./tools/subagents-tool.js";
+import { createTaskManageTool } from "./tools/task-manage-tool.js";
+import { createTaskReadTool } from "./tools/task-read-tool.js";
 import { createTtsTool } from "./tools/tts-tool.js";
 import { createWebFetchTool, createWebSearchTool } from "./tools/web-tools.js";
 import { resolveWorkspaceRoot } from "./workspace-dir.js";
@@ -170,6 +172,12 @@ export function createOpenClawTools(options?: {
     }),
     createChannelReadTool(),
     createChannelManageTool({
+      agentSessionKey: options?.agentSessionKey,
+    }),
+    createTaskManageTool({
+      agentSessionKey: options?.agentSessionKey,
+    }),
+    createTaskReadTool({
       agentSessionKey: options?.agentSessionKey,
     }),
     ...(webSearchTool ? [webSearchTool] : []),

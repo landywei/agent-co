@@ -27,6 +27,7 @@ import { sessionsHandlers } from "./server-methods/sessions.js";
 import { skillsHandlers } from "./server-methods/skills.js";
 import { systemHandlers } from "./server-methods/system.js";
 import { talkHandlers } from "./server-methods/talk.js";
+import { taskHandlers } from "./server-methods/tasks.js";
 import { ttsHandlers } from "./server-methods/tts.js";
 import type { GatewayRequestHandlers, GatewayRequestOptions } from "./server-methods/types.js";
 import { updateHandlers } from "./server-methods/update.js";
@@ -95,6 +96,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...agentsHandlers,
   ...browserHandlers,
   ...companyChannelsHandlers,
+  ...taskHandlers,
 };
 
 export async function handleGatewayRequest(

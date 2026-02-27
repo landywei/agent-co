@@ -95,15 +95,24 @@ src/company-channels/       SQLite-backed channel system (public/private/DM, thr
   trigger.ts                Watches channel messages → wakes target agents via gateway RPC
   types.ts                  CompanyChannel, ChannelMember, ChannelMessage, events
 
+src/tasks/                    SQLite-backed durable task thread system
+  types.ts                  TaskThread, TaskLog, TaskEvent, TaskSummary types
+  store.ts                  Task CRUD, heartbeats, logs, dependency tracking, stale detection
+  index.ts                  Singleton accessor (tasks.db in ~/.openclaw/company/)
+  watchdog.ts               Monitors stale tasks (no heartbeat for 15min), emits alerts
+
 src/agents/tools/
   channel-post-tool.ts      Post messages to company channels
   channel-read-tool.ts      Read channel history and search
   channel-manage-tool.ts    Create channels, add/remove members, list channels
   agents-create-tool.ts     CEO tool: hire a new agent (register, create workspace, restart gateway)
+  task-manage-tool.ts       Create/update/heartbeat/log/complete task threads
+  task-read-tool.ts         List tasks, view detail + logs, org-wide summary
 
 src/gateway/
-  workstream-http.ts        HTTP endpoints for workstream management
+  workstream-http.ts        HTTP endpoints for workstream + task monitoring dashboard
   company-channels.ts       Gateway method bindings for channel operations
+  server-methods/tasks.ts   Gateway RPC handlers for task CRUD + heartbeats
 
 scripts/workstream/
   provision-workstream.mjs  Provision full org from a manifest (roles, tools, permissions, channels)
@@ -120,6 +129,9 @@ scripts/workstream/
 - Tool access is scoped per agent via config (e.g., operating core gets `exec`+`write`, support staff gets `read`+`memory`)
 - Agent-to-agent communication goes through channels, not direct calls — all messages are visible, logged, and triggerable
 - Channel messages wake sleeping agents via `trigger.ts` → gateway RPC with cooldown dedup
+- Agents manage durable **task threads** via `task_manage` and `task_read` tools — each task persists objective, status, progress, decision logs, and heartbeats in SQLite
+- A **watchdog** monitors active tasks for stale heartbeats (15min threshold) and alerts via the dashboard
+- Humans monitor all task activity in real time at the workstream dashboard (`/workstream.html` → Tasks tab)
 
 ## Quick start
 

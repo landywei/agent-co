@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+import { resolveOrgStatus } from "../agents/status.js";
+import { loadConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
+import { getTaskStore } from "../tasks/index.js";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -123,6 +126,17 @@ export function handleWorkstreamHttpRequest(req: IncomingMessage, res: ServerRes
     }
   }
 
+  // JSON API endpoints for task management dashboard
+  if (rel === "tasks-data.json" || rel.startsWith("tasks-data.json")) {
+    return handleTasksApi(req, res, url);
+  }
+
+  // Agent status API for org monitoring
+  if (rel === "agents-status.json") {
+    handleAgentsStatusApi(res);
+    return true;
+  }
+
   if (!STATE_DIR_FILES.some((p) => rel === p || rel.startsWith(p))) {
     return false;
   }
@@ -141,4 +155,87 @@ export function handleWorkstreamHttpRequest(req: IncomingMessage, res: ServerRes
   }
 
   return serveFile(req, res, realPath);
+}
+
+function handleTasksApi(_req: IncomingMessage, res: ServerResponse, url: URL): boolean {
+  try {
+    const store = getTaskStore();
+    const view = url.searchParams.get("view");
+
+    let data: unknown;
+
+    if (view === "summary") {
+      const summary = store.getSummary();
+      const agents = store.getAgentSummaries();
+      data = { summary, agents };
+    } else if (view === "logs") {
+      const taskId = url.searchParams.get("taskId");
+      if (!taskId) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ error: "taskId required" }));
+        return true;
+      }
+      const limit = Number(url.searchParams.get("limit")) || 100;
+      data = { logs: store.getLogs(taskId, { limit }) };
+    } else if (view === "detail") {
+      const taskId = url.searchParams.get("taskId");
+      if (!taskId) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ error: "taskId required" }));
+        return true;
+      }
+      const task = store.getTask(taskId);
+      if (!task) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ error: "task not found" }));
+        return true;
+      }
+      const logs = store.getLogs(taskId, { limit: 50 });
+      const subtasks = store.getSubtasks(taskId);
+      data = { task, logs, subtasks };
+    } else {
+      const agentId = url.searchParams.get("agentId") ?? undefined;
+      const status = url.searchParams.get("status") as
+        | import("../tasks/types.js").TaskStatus
+        | undefined;
+      const limit = Number(url.searchParams.get("limit")) || 200;
+      const tasks = store.listTasks({ agentId, status, limit });
+      const summary = store.getSummary();
+      data = { tasks, summary };
+    }
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache");
+    res.end(JSON.stringify(data));
+    return true;
+  } catch {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: "task store unavailable" }));
+    return true;
+  }
+}
+
+function handleAgentsStatusApi(res: ServerResponse): void {
+  let taskStore: import("../tasks/store.js").TaskStore | undefined;
+  try {
+    taskStore = getTaskStore();
+  } catch {
+    /* task store may not be available */
+  }
+
+  resolveOrgStatus({ config: loadConfig(), taskStore })
+    .then((status) => {
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache");
+      res.end(JSON.stringify(status));
+    })
+    .catch(() => {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ error: "agent status unavailable" }));
+    });
 }

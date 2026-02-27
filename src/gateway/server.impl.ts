@@ -47,6 +47,8 @@ import { createEmptyPluginRegistry } from "../plugins/registry.js";
 import type { PluginServicesHandle } from "../plugins/services.js";
 import { getTotalQueueSize } from "../process/command-queue.js";
 import type { RuntimeEnv } from "../runtime.js";
+import { getTaskStore } from "../tasks/index.js";
+import { startTaskWatchdog, type TaskWatchdog } from "../tasks/watchdog.js";
 import { runOnboardingWizard } from "../wizard/onboarding.js";
 import { createAuthRateLimiter, type AuthRateLimiter } from "./auth-rate-limit.js";
 import { startChannelHealthMonitor } from "./channel-health-monitor.js";
@@ -680,6 +682,7 @@ export async function startGatewayServer(
     }
   }
 
+  let taskWatchdog: TaskWatchdog | undefined;
   if (!minimalTestGateway) {
     try {
       const channelStore = getCompanyChannelStore();
@@ -688,6 +691,17 @@ export async function startGatewayServer(
     } catch (err) {
       log.warn(
         `company channel triggers failed to initialize: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    try {
+      const taskStore = getTaskStore();
+      taskWatchdog = startTaskWatchdog(taskStore, broadcast);
+      setupTaskBroadcasts(taskStore, broadcast);
+      log.info("task store and watchdog initialized");
+    } catch (err) {
+      log.warn(
+        `task store failed to initialize: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
@@ -778,7 +792,40 @@ export async function startGatewayServer(
       skillsChangeUnsub();
       authRateLimiter?.dispose();
       channelHealthMonitor?.stop();
+      taskWatchdog?.stop();
       await close(opts);
     },
   };
+}
+
+function setupTaskBroadcasts(
+  taskStore: import("../tasks/store.js").TaskStore,
+  broadcast: import("./server-broadcast.js").GatewayBroadcastFn,
+): void {
+  taskStore.on("event", (event) => {
+    switch (event.type) {
+      case "task.created":
+        broadcast("task.created", { task: event.task });
+        break;
+      case "task.updated":
+        broadcast("task.updated", { task: event.task, changes: event.changes });
+        break;
+      case "task.completed":
+        broadcast("task.completed", { task: event.task });
+        break;
+      case "task.failed":
+        broadcast("task.failed", { task: event.task, reason: event.reason });
+        break;
+      case "task.log":
+        broadcast("task.log", { log: event.log });
+        break;
+      case "task.heartbeat":
+        broadcast("task.heartbeat", {
+          taskId: event.taskId,
+          agentId: event.agentId,
+          timestamp: event.timestamp,
+        });
+        break;
+    }
+  });
 }
