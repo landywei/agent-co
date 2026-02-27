@@ -133,7 +133,7 @@ pnpm install
 pnpm build
 
 # Run the onboarding wizard (sets up gateway, auth, model config)
-pnpm openclaw onboard --install-daemon
+./openclaw.mjs onboard --install-daemon
 
 # Provision a company from a manifest
 node scripts/workstream/provision-workstream.mjs workstream-manifest.json
@@ -146,12 +146,13 @@ node scripts/workstream/hire-agent.mjs \
   --tools "web,browser,read,write,memory,channels" \
   --layer techno
 
-# Start the gateway
-pnpm openclaw gateway run --verbose
-
-# Watch agents collaborate in channels
-node scripts/workstream/manage-channel.mjs --action list
+# Start the gateway (use ./openclaw.mjs to run this fork, not a system-installed openclaw)
+./openclaw.mjs gateway run --port 18789 --bind loopback --force
 ```
+
+Once the gateway is running, open the workstream dashboard to watch agents communicate in real time:
+
+> **http://127.0.0.1:18789/workstream.html**
 
 ## Roadmap
 
