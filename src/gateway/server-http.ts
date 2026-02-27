@@ -56,6 +56,7 @@ import { handleOpenResponsesHttpRequest } from "./openresponses-http.js";
 import { GATEWAY_CLIENT_MODES, normalizeGatewayClientMode } from "./protocol/client-info.js";
 import type { GatewayWsClient } from "./server/ws-types.js";
 import { handleToolsInvokeHttpRequest } from "./tools-invoke-http.js";
+import { handleWorkstreamHttpRequest } from "./workstream-http.js";
 
 type SubsystemLogger = ReturnType<typeof createSubsystemLogger>;
 type HookAuthFailure = { count: number; windowStartedAtMs: number };
@@ -588,6 +589,9 @@ export function createGatewayHttpServer(opts: {
         if (await canvasHost.handleHttpRequest(req, res)) {
           return;
         }
+      }
+      if (handleWorkstreamHttpRequest(req, res)) {
+        return;
       }
       if (controlUiEnabled) {
         if (

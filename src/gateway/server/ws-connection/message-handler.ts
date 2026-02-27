@@ -422,7 +422,9 @@ export function attachGatewayWsMessageHandler(params: {
           close(1008, truncateCloseReason(authMessage));
         };
         if (!device) {
-          if (scopes.length > 0 && !allowControlUiBypass) {
+          // Allow token/password-authenticated connections to retain self-declared scopes
+          // even without device identity (e.g. workstream UI, local dev tools).
+          if (scopes.length > 0 && !allowControlUiBypass && !sharedAuthOk) {
             scopes = [];
             connectParams.scopes = scopes;
           }
@@ -624,7 +626,9 @@ export function attachGatewayWsMessageHandler(params: {
           return;
         }
 
-        const skipPairing = allowControlUiBypass && sharedAuthOk;
+        const isLocalBackend =
+          isLocalClient && sharedAuthOk && connectParams.client.mode === "backend";
+        const skipPairing = (allowControlUiBypass && sharedAuthOk) || isLocalBackend;
         if (device && devicePublicKey && !skipPairing) {
           const formatAuditList = (items: string[] | undefined): string => {
             if (!items || items.length === 0) {

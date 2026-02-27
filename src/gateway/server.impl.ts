@@ -8,6 +8,8 @@ import type { CanvasHostServer } from "../canvas-host/server.js";
 import { type ChannelId, listChannelPlugins } from "../channels/plugins/index.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import { createDefaultDeps } from "../cli/deps.js";
+import { getCompanyChannelStore } from "../company-channels/index.js";
+import { setupChannelTriggers } from "../company-channels/trigger.js";
 import { isRestartEnabled } from "../config/commands.js";
 import {
   CONFIG_PATH,
@@ -675,6 +677,18 @@ export async function startGatewayServer(
       void hookRunner.runGatewayStart({ port }, { port }).catch((err) => {
         log.warn(`gateway_start hook failed: ${String(err)}`);
       });
+    }
+  }
+
+  if (!minimalTestGateway) {
+    try {
+      const channelStore = getCompanyChannelStore();
+      setupChannelTriggers(channelStore, broadcast);
+      log.info("company channel triggers initialized");
+    } catch (err) {
+      log.warn(
+        `company channel triggers failed to initialize: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 

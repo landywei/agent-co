@@ -234,6 +234,68 @@ const routeModelsStatus: RouteSpec = {
   },
 };
 
+const routeCompany: RouteSpec = {
+  match: (path) => path[0] === "company",
+  run: async (argv) => {
+    const sub = getCommandPositionals(argv)[1];
+    if (!sub) {
+      return false;
+    }
+    const { runWorkstreamScript } = await import("../workstream-scripts.js");
+    if (sub === "create") {
+      const goal = getCommandPositionals(argv)[2] ?? "";
+      const code = await runWorkstreamScript("create-company.mjs", goal ? [goal] : []);
+      process.exitCode = code;
+      return true;
+    }
+    if (sub === "reset") {
+      const code = await runWorkstreamScript("reset-company.sh", []);
+      process.exitCode = code;
+      return true;
+    }
+    if (sub === "provision") {
+      const passthrough = argv.slice(argv.indexOf("provision") + 1);
+      const code = await runWorkstreamScript("provision-workstream.mjs", passthrough);
+      process.exitCode = code;
+      return true;
+    }
+    return false;
+  },
+};
+
+const routeHire: RouteSpec = {
+  match: (path) => path[0] === "hire",
+  run: async (argv) => {
+    const passthrough = argv.slice(argv.indexOf("hire") + 1);
+    const { runWorkstreamScript } = await import("../workstream-scripts.js");
+    const code = await runWorkstreamScript("hire-agent.mjs", passthrough);
+    process.exitCode = code;
+    return true;
+  },
+};
+
+const routeFire: RouteSpec = {
+  match: (path) => path[0] === "fire",
+  run: async (argv) => {
+    const passthrough = argv.slice(argv.indexOf("fire") + 1);
+    const { runWorkstreamScript } = await import("../workstream-scripts.js");
+    const code = await runWorkstreamScript("fire-agent.mjs", passthrough);
+    process.exitCode = code;
+    return true;
+  },
+};
+
+const routeChannel: RouteSpec = {
+  match: (path) => path[0] === "channel",
+  run: async (argv) => {
+    const passthrough = argv.slice(argv.indexOf("channel") + 1);
+    const { runWorkstreamScript } = await import("../workstream-scripts.js");
+    const code = await runWorkstreamScript("manage-channel.mjs", passthrough);
+    process.exitCode = code;
+    return true;
+  },
+};
+
 const routes: RouteSpec[] = [
   routeHealth,
   routeStatus,
@@ -244,6 +306,10 @@ const routes: RouteSpec[] = [
   routeConfigUnset,
   routeModelsList,
   routeModelsStatus,
+  routeCompany,
+  routeHire,
+  routeFire,
+  routeChannel,
 ];
 
 export function findRoutedCommand(path: string[]): RouteSpec | null {

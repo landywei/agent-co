@@ -31,6 +31,7 @@ import { listChannelSupportedActions, resolveChannelMessageToolHints } from "../
 import { formatUserTime, resolveUserTimeFormat, resolveUserTimezone } from "../date-time.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "../defaults.js";
 import { resolveOpenClawDocsPath } from "../docs-path.js";
+import { createLlmCallLogger } from "../llm-call-log.js";
 import { getApiKeyForModel, resolveModelAuthMode } from "../model-auth.js";
 import { ensureOpenClawModelsJson } from "../models-config.js";
 import {
@@ -581,6 +582,18 @@ export async function compactEmbeddedPiSessionDirect(
       });
       applySystemPromptOverrideToSession(session, systemPromptOverride());
 
+      const llmCallLogger = createLlmCallLogger({
+        env: process.env,
+        runId,
+        sessionId: params.sessionId,
+        sessionKey: params.sessionKey,
+        provider,
+        modelId,
+        modelApi: model.api,
+        workspaceDir: params.workspaceDir,
+      });
+      session.agent.streamFn = llmCallLogger.wrapStreamFn(session.agent.streamFn);
+
       try {
         const prior = await sanitizeSessionHistory({
           messages: session.messages,
@@ -660,6 +673,7 @@ export async function compactEmbeddedPiSessionDirect(
         const result = await compactWithSafetyTimeout(() =>
           session.compact(params.customInstructions),
         );
+        llmCallLogger.recordUsage(session.messages);
         // Estimate tokens after compaction by summing token estimates for remaining messages
         let tokensAfter: number | undefined;
         try {

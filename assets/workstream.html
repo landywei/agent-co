@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company OS — AI-Powered Venture</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFFDF5;
+  --bg2: #FFF9E8;
+  --surface: #FFFFFF;
+  --surface2: #FFF6E0;
+  --surface3: #FFE9B8;
+  --surface-glass: rgba(255, 253, 245, 0.92);
+  --border: #F0D68A;
+  --border-hover: #E6C05A;
+  --border-active: rgba(227, 0, 11, 0.5);
+  --text: #1B2838;
+  --text-secondary: #2E4057;
+  --text-muted: #6B7B8D;
+  --text-dim: #9DAAB7;
+  --accent: #E3000B;
+  --accent-light: #FF2D2D;
+  --accent-glow: rgba(227, 0, 11, 0.08);
+  --gradient: linear-gradient(135deg, #E3000B 0%, #FF2D2D 100%);
+  --gradient-subtle: linear-gradient(135deg, rgba(227,0,11,0.05) 0%, rgba(255,213,0,0.05) 100%);
+  --green: #00852B;
+  --green-bg: rgba(0, 133, 43, 0.10);
+  --amber: #FFD500;
+  --amber-bg: rgba(255, 213, 0, 0.15);
+  --rose: #FF7E14;
+  --rose-bg: rgba(255, 126, 20, 0.10);
+  --sky: #006CB7;
+  --sky-bg: rgba(0, 108, 183, 0.10);
+  --violet: #8B0065;
+  --violet-bg: rgba(139, 0, 101, 0.08);
+  --teal: #00852B;
+  --font: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  --panel-w: 440px;
+  --sidebar-w: 68px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 3px 0 rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 0 rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.08);
+  --shadow-brick: 0 4px 0 #D4A843, 0 6px 12px rgba(0,0,0,0.06);
+  --sidebar-bg: #1B2838;
+  --sidebar-text: #F0E6D2;
+  --sidebar-text-muted: #8899AA;
+  --sidebar-border: #2E4057;
+  --lego-red: #E3000B;
+  --lego-yellow: #FFD500;
+  --lego-blue: #006CB7;
+  --lego-green: #00852B;
+  --lego-orange: #FF7E14;
+  --lego-purple: #8B0065;
+  --stud-size: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  height: 100vh; overflow: hidden; display: flex;
+  background-image: radial-gradient(circle, rgba(212,168,67,0.08) 1.2px, transparent 1.2px);
+  background-size: 28px 28px;
+}
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: var(--font); }
+::selection { background: rgba(255, 213, 0, 0.35); }
+
+/* ── Left Sidebar (LEGO baseplate rail) ── */
+.sidebar-rail {
+  width: var(--sidebar-w); background: var(--sidebar-bg);
+  border-right: 2px solid #2E4057;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 14px 0; gap: 6px; flex-shrink: 0; z-index: 10;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1.5px, transparent 1.5px);
+  background-size: 16px 16px;
+}
+.rail-logo {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--lego-red); display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px; font-size: 17px; font-weight: 900; color: #fff;
+  box-shadow: 0 3px 0 #A50008, 0 5px 10px rgba(0,0,0,0.25);
+  border: 2.5px solid rgba(255,255,255,0.2);
+}
+.rail-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--sidebar-text-muted); transition: all 0.18s; position: relative;
+  border: 2px solid transparent;
+}
+.rail-btn:hover {
+  background: rgba(255,255,255,0.08); color: var(--sidebar-text);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
+.rail-btn.active {
+  background: var(--lego-yellow); color: var(--sidebar-bg);
+  border-color: #D4A800;
+  box-shadow: 0 2px 0 #B8920A, 0 4px 8px rgba(0,0,0,0.2);
+}
+.rail-btn svg { width: 20px; height: 20px; }
+.rail-spacer { flex: 1; }
+.rail-status {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--rose); margin: 6px;
+  border: 2px solid rgba(255,255,255,0.15);
+}
+.rail-status.connected { background: var(--lego-green); box-shadow: 0 0 10px rgba(0,133,43,0.5); border-color: rgba(255,255,255,0.25); }
+
+/* ── Nav Panel (LEGO brick shelf) ── */
+.nav-panel {
+  width: 260px; background: var(--surface);
+  border-right: 2px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+  transition: width 0.25s ease, border-width 0.25s ease, opacity 0.2s ease;
+  position: relative;
+}
+.nav-panel.hidden { width: 0; overflow: hidden; border-right-width: 0; }
+.nav-panel.hidden * { opacity: 0; transition: opacity 0.1s; }
+.nav-header {
+  padding: 12px 10px 12px 16px; border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg2) 100%);
+}
+.nav-header h2 { font-size: 14px; font-weight: 800; letter-spacing: 0.3px; flex: 1; color: var(--text); }
+
+/* Panel toggle buttons */
+.panel-toggle {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); border: 2px solid var(--border); background: var(--surface);
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+}
+.panel-toggle:hover { color: var(--text); border-color: var(--border-hover); background: var(--bg2); transform: scale(1.1); }
+.panel-toggle:active { transform: scale(0.95); box-shadow: none; }
+.panel-toggle svg { width: 14px; height: 14px; }
+
+.expand-tab {
+  position: fixed; top: 50%; z-index: 15; width: 24px; height: 48px;
+  border-radius: 0 12px 12px 0; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; transform: translateY(-50%);
+  background: var(--surface); border: 2px solid var(--border); border-left: none;
+  color: var(--text-dim); box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+}
+.expand-tab:hover { color: var(--lego-blue); background: var(--bg2); width: 28px; }
+.expand-tab svg { width: 14px; height: 14px; }
+.expand-tab-left { left: var(--sidebar-w); }
+.expand-tab-right { right: 0; border-radius: 12px 0 0 12px; border: 2px solid var(--border); border-right: none; box-shadow: -2px 0 6px rgba(0,0,0,0.06); }
+.nav-section-title {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-dim); padding: 16px 16px 6px;
+}
+.nav-list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+.nav-item {
+  padding: 9px 12px; border-radius: var(--radius); cursor: pointer;
+  font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+  color: var(--text-secondary); transition: all 0.15s; margin: 2px 0;
+  border: 2px solid transparent;
+}
+.nav-item:hover {
+  background: var(--bg2); color: var(--text);
+  border-color: var(--border);
+  transform: translateX(2px);
+}
+.nav-item.active {
+  background: var(--lego-yellow); color: var(--text);
+  border-color: #D4A800;
+  box-shadow: 0 2px 0 #B8920A;
+}
+.nav-item .item-icon { width: 20px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.nav-item .item-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-item .item-badge {
+  font-size: 10px; font-weight: 800; min-width: 20px; height: 20px;
+  border-radius: 50%; background: var(--lego-red); color: #fff;
+  display: flex; align-items: center; justify-content: center; padding: 0 5px;
+  box-shadow: 0 2px 0 #A50008;
+}
+.nav-footer { padding: 10px; border-top: 2px solid var(--border); }
+.nav-add-btn {
+  width: 100%; padding: 10px; border-radius: var(--radius);
+  border: 2px dashed var(--border); color: var(--text-muted);
+  font-size: 13px; font-weight: 700; transition: all 0.15s; display: flex; align-items: center;
+  justify-content: center; gap: 6px;
+}
+.nav-add-btn:hover { border-color: var(--lego-blue); color: var(--lego-blue); background: rgba(0,108,183,0.06); }
+
+/* ── Main Content ── */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* ── Topbar (LEGO header strip) ── */
+.topbar {
+  height: 56px; background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; padding: 0 22px; gap: 14px; flex-shrink: 0;
+}
+.topbar-title { font-size: 15px; font-weight: 800; flex: 1; }
+.topbar-sub { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+.btn {
+  padding: 7px 16px; border-radius: var(--radius); border: 2px solid var(--border);
+  background: var(--surface); color: var(--text-secondary); font-size: 12px;
+  font-weight: 700; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+  position: relative;
+}
+.btn:hover { border-color: var(--border-hover); color: var(--text); background: var(--bg2); transform: translateY(-1px); box-shadow: 0 3px 0 rgba(0,0,0,0.08); }
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.btn-accent {
+  background: var(--lego-red); border-color: #C2000A; color: #fff;
+  box-shadow: 0 3px 0 #A50008, 0 5px 10px rgba(227,0,11,0.15);
+}
+.btn-accent:hover { background: var(--accent-light); border-color: #E01010; box-shadow: 0 3px 0 #B00008, 0 6px 12px rgba(227,0,11,0.2); }
+.btn-accent:active { box-shadow: 0 1px 0 #A50008; }
+.btn-sm { padding: 5px 12px; font-size: 11px; }
+.btn-ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.btn-ghost:hover { background: var(--accent-glow); box-shadow: none; }
+
+select.topbar-select {
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  color: var(--text-secondary); font-size: 12px; font-weight: 700; padding: 6px 10px; outline: none;
+  cursor: pointer;
+}
+
+/* ── Canvas (LEGO baseplate) ── */
+.canvas-wrap {
+  flex: 1; overflow: auto; padding: 40px 20px 60px;
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle, rgba(212,168,67,0.06) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+.canvas-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 20px; text-align: center;
+}
+.canvas-empty h2 { font-size: 24px; font-weight: 900; color: var(--lego-red); }
+.canvas-empty p { font-size: 14px; color: var(--text-muted); max-width: 400px; line-height: 1.7; font-weight: 600; }
+
+/* Org tree connectors (LEGO tubes) */
+.org-tree { display: flex; flex-direction: column; align-items: center; }
+.org-tree ul { display: flex; justify-content: center; padding: 0; margin: 0; list-style: none; position: relative; }
+.org-tree ul::before { content:''; position: absolute; top: 0; left: 50%; border-left: 3px solid var(--border); height: 28px; }
+.org-tree ul > li { display: flex; flex-direction: column; align-items: center; padding: 28px 8px 0; position: relative; }
+.org-tree ul > li::before, .org-tree ul > li::after { content:''; position: absolute; top: 0; height: 28px; border-top: 3px solid var(--border); width: 50%; }
+.org-tree ul > li::before { right: 50%; }
+.org-tree ul > li::after { left: 50%; }
+.org-tree ul > li:first-child::before { display: none; }
+.org-tree ul > li:first-child::after { border-radius: 12px 0 0 0; }
+.org-tree ul > li:last-child::after { display: none; }
+.org-tree ul > li:last-child::before { border-radius: 0 12px 0 0; }
+.org-tree ul > li:only-child::before, .org-tree ul > li:only-child::after { display: none; }
+.org-tree li > ul::before { height: 28px; }
+
+/* ── Org Card (LEGO Brick!) ── */
+.org-card {
+  background: var(--surface);
+  border: 2.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  min-width: 180px; max-width: 220px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.06), 0 6px 12px rgba(0,0,0,0.04);
+  border-top: 5px solid var(--lego-blue);
+}
+.org-card::before {
+  content: ''; position: absolute; top: -1px; left: 14px;
+  width: var(--stud-size); height: var(--stud-size);
+  border-radius: 50%; background: inherit;
+  border: 2px solid rgba(0,0,0,0.08);
+  box-shadow: calc(var(--stud-size) + 6px) 0 0 0 inherit, 0 0 0 2px rgba(0,0,0,0.08), calc(var(--stud-size) + 6px) 0 0 2px rgba(0,0,0,0.08);
+  transform: translateY(-50%);
+}
+.org-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.08), 0 10px 20px rgba(0,0,0,0.08);
+  border-color: var(--border-hover);
+}
+.org-card.selected {
+  border-color: var(--lego-red); border-top-color: var(--lego-red);
+  box-shadow: 0 4px 0 rgba(227,0,11,0.15), 0 0 0 3px rgba(227,0,11,0.08), 0 8px 20px rgba(227,0,11,0.08);
+}
+
+.org-card .card-layer {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px;
+  padding: 3px 8px; border-radius: 6px; display: inline-block; margin-bottom: 8px; font-weight: 800;
+}
+.layer-apex { background: var(--lego-red); color: #fff; }
+.layer-middle { background: var(--lego-blue); color: #fff; }
+.layer-operating { background: var(--lego-green); color: #fff; }
+.layer-techno { background: var(--lego-yellow); color: var(--text); }
+.layer-support { background: var(--lego-orange); color: #fff; }
+
+.org-card .card-title { font-size: 14px; font-weight: 800; margin-bottom: 3px; }
+.org-card .card-role { font-size: 11px; color: var(--text-muted); line-height: 1.45; font-weight: 600; }
+.org-card .card-human { font-size: 10px; color: var(--text-dim); margin-top: 6px; display: flex; align-items: center; gap: 4px; font-weight: 600; }
+.org-card .card-workspace { font-size: 9px; color: var(--text-dim); margin-top: 4px; font-family: var(--mono); opacity: 0.7; }
+.org-card .card-badges { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.org-card .badge {
+  font-size: 9px; padding: 3px 7px; border-radius: 6px;
+  background: var(--bg2); color: var(--text-muted); font-weight: 700;
+  border: 1.5px solid var(--border);
+}
+.org-card .task-count {
+  position: absolute; top: -9px; right: -9px;
+  background: var(--lego-red); color: #fff; font-size: 10px; font-weight: 900;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 0 #A50008, 0 4px 8px rgba(227,0,11,0.25);
+  border: 2px solid #fff;
+}
+.add-child-btn {
+  display: block; margin: 12px auto 0; padding: 5px 14px; border-radius: var(--radius);
+  border: 2px dashed var(--border); color: var(--text-dim); font-size: 11px; font-weight: 700; transition: all 0.15s;
+}
+.add-child-btn:hover { border-color: var(--lego-blue); color: var(--lego-blue); background: rgba(0,108,183,0.05); }
+
+/* ── Deploy status ── */
+.deploy-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; vertical-align: middle;
+  border: 1.5px solid rgba(0,0,0,0.1);
+}
+.deploy-dot.live { background: var(--lego-green); box-shadow: 0 0 8px rgba(0,133,43,0.4); }
+.deploy-dot.draft { background: var(--text-dim); opacity: 0.4; }
+.btn-deploy {
+  background: var(--lego-green); border-color: #006B23; color: #fff;
+  box-shadow: 0 3px 0 #005A1C, 0 5px 10px rgba(0,133,43,0.15);
+}
+.btn-deploy:hover { background: #009933; border-color: #008029; }
+.btn-teardown { background: var(--rose-bg); border-color: transparent; color: var(--rose); box-shadow: none; }
+.btn-teardown:hover { background: rgba(255,126,20,0.2); }
+.deploy-banner {
+  padding: 12px 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 10px;
+  border-bottom: 2px solid var(--border);
+}
+.deploy-banner.live { background: rgba(0,133,43,0.06); color: var(--lego-green); }
+.deploy-banner.draft { background: rgba(255,213,0,0.1); color: #B8920A; }
+.deploy-log {
+  background: var(--sidebar-bg); border: 2px solid var(--sidebar-border); border-radius: var(--radius);
+  padding: 14px; font-family: var(--mono); font-size: 11px; color: var(--sidebar-text);
+  max-height: 300px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;
+  margin-top: 12px;
+}
+
+/* ── Right Panel (LEGO instruction panel) ── */
+.right-panel {
+  width: var(--panel-w); background: var(--surface);
+  border-left: 2px solid var(--border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
+  transition: width 0.25s ease, border-width 0.25s ease;
+  position: relative;
+}
+.right-panel.collapsed { width: 0; border-left-width: 0; }
+
+.panel-tabs {
+  display: flex; border-bottom: 2px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1; padding: 12px 8px; font-size: 11px; font-weight: 800;
+  text-align: center; color: var(--text-muted);
+  border-bottom: 3px solid transparent; transition: all 0.15s;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.panel-tab:hover { color: var(--text-secondary); background: var(--bg2); }
+.panel-tab.active { color: var(--lego-red); border-bottom-color: var(--lego-red); }
+
+.panel-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.panel-scroll { flex: 1; overflow-y: auto; }
+
+/* ── Details ── */
+.detail-section { padding: 16px 20px; border-bottom: 2px solid var(--bg2); }
+.detail-section:last-child { border-bottom: none; }
+.detail-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 7px; }
+.detail-input {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius);
+  border: 2px solid var(--border); background: var(--bg2);
+  color: var(--text); font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.15s;
+}
+.detail-input:focus { border-color: var(--lego-blue); box-shadow: 0 0 0 3px rgba(0,108,183,0.1); }
+.detail-textarea {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius);
+  border: 2px solid var(--border); background: var(--bg2);
+  color: var(--text); font-size: 13px; font-weight: 600; outline: none;
+  resize: vertical; min-height: 60px; line-height: 1.5; transition: border-color 0.15s;
+}
+.detail-textarea:focus { border-color: var(--lego-blue); box-shadow: 0 0 0 3px rgba(0,108,183,0.1); }
+.detail-textarea.mono { font-family: var(--mono); font-size: 12px; min-height: 80px; font-weight: 500; }
+
+/* ── Agent Inspector ── */
+.agent-header-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 20px; border-bottom: 2px solid var(--bg2);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--bg2) 100%);
+}
+.agent-avatar {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--bg2); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.agent-header-info { flex: 1; min-width: 0; }
+.agent-header-title { font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.2; }
+.agent-header-id { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.agent-header-role { font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4; }
+
+.agent-file-section {
+  border-bottom: 1.5px solid var(--bg2);
+}
+.agent-file-section:last-of-type { border-bottom: none; }
+.agent-file-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; cursor: pointer; user-select: none;
+  transition: background 0.12s;
+}
+.agent-file-header:hover { background: var(--bg2); }
+.agent-file-arrow {
+  font-size: 9px; color: var(--text-dim); width: 12px;
+  transition: transform 0.15s;
+}
+.agent-file-icon { font-size: 14px; }
+.agent-file-label { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; }
+.agent-file-name {
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  background: var(--bg2); padding: 2px 6px; border-radius: 4px;
+}
+.agent-file-content {
+  padding: 0 20px 14px 40px;
+  font-size: 12.5px; line-height: 1.65; color: var(--text-secondary);
+  max-height: 320px; overflow-y: auto;
+}
+.agent-file-content .md-h { color: var(--text); }
+.agent-file-content .md-pre { font-size: 11px; }
+.agent-file-empty {
+  padding: 32px 20px; text-align: center; color: var(--text-dim); font-size: 13px;
+}
+.agent-file-loading {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 32px 20px; color: var(--text-dim); font-size: 12px;
+}
+.agent-file-loading .spinner {
+  width: 14px; height: 14px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.refresh-btn {
+  background: var(--bg2); border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 5px 10px; font-size: 11px; font-weight: 700; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.12s; white-space: nowrap;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+.refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 6px 12px; border-radius: 8px; border: 2px solid var(--border);
+  background: var(--surface); color: var(--text-muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; user-select: none;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+}
+.chip:hover { border-color: var(--border-hover); color: var(--text-secondary); transform: translateY(-1px); }
+.chip:active { transform: translateY(1px); box-shadow: none; }
+.chip.active {
+  border-color: var(--lego-red); background: rgba(227,0,11,0.08); color: var(--lego-red);
+  box-shadow: 0 2px 0 rgba(227,0,11,0.12);
+}
+.chip.green.active {
+  border-color: var(--lego-green); background: var(--green-bg); color: var(--lego-green);
+  box-shadow: 0 2px 0 rgba(0,133,43,0.12);
+}
+
+/* ── Tasks ── */
+.task-list { padding: 8px 20px; }
+.task-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 2px solid var(--bg2); }
+.task-item:last-child { border-bottom: none; }
+.task-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--border);
+  flex-shrink: 0; margin-top: 2px; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; color: transparent;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+}
+.task-check:hover { border-color: var(--lego-green); transform: scale(1.1); }
+.task-check.done {
+  background: var(--lego-green); border-color: #006B23; color: #fff; font-size: 10px;
+  box-shadow: 0 2px 0 #005A1C;
+}
+.task-body { flex: 1; min-width: 0; }
+.task-title { font-size: 13px; font-weight: 600; line-height: 1.45; }
+.task-title.done { text-decoration: line-through; color: var(--text-dim); }
+.task-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-weight: 600; }
+.task-input-row { padding: 12px 20px; border-top: 2px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+
+
+/* ── Files tab ── */
+.file-list { padding: 8px 20px; }
+.file-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: var(--radius); cursor: pointer; transition: all 0.12s;
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  border: 2px solid transparent;
+}
+.file-item:hover { background: var(--bg2); border-color: var(--border); }
+.file-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+.file-name { flex: 1; }
+.file-size { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+.file-empty { padding: 30px 20px; text-align: center; color: var(--text-dim); font-size: 13px; font-weight: 600; }
+
+/* ── No selection ── */
+.no-selection { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--text-dim); gap: 12px; padding: 40px; text-align: center; }
+.no-selection p { font-size: 14px; line-height: 1.6; font-weight: 600; }
+
+/* ── Modal (LEGO instruction card) ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(27,40,56,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px); }
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--surface); border: 3px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px; width: 440px; max-width: 92vw;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.12);
+  border-top: 5px solid var(--lego-red);
+}
+.modal h2 { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+.modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; }
+.modal label { display: block; font-size: 10px; font-weight: 800; color: var(--text-dim); margin: 12px 0 5px; text-transform: uppercase; letter-spacing: 1px; }
+.modal input { width: 100%; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-actions button { flex: 1; padding: 11px; border-radius: var(--radius); font-size: 13px; font-weight: 700; }
+.modal-error { color: var(--lego-orange); font-size: 11px; font-weight: 700; margin-top: 8px; display: none; }
+
+/* ── Scrollbar (LEGO tube) ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+@keyframes fadeout { 0%,70% { opacity:1 } 100% { opacity:0 } }
+@keyframes pulse { 0%,100% { opacity:0.4 } 50% { opacity:1 } }
+.typing-dot { display: inline-block; animation: pulse 1.2s infinite; font-weight: 900; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Knowledge Base (LEGO instruction booklets) ── */
+.kb-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px; padding: 24px; width: 100%; max-width: 1100px;
+}
+.kb-category {
+  background: var(--surface);
+  border: 2.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.2s;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.04), 0 6px 12px rgba(0,0,0,0.03);
+}
+.kb-category:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.06), 0 10px 20px rgba(0,0,0,0.05); }
+.kb-cat-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg2);
+}
+.kb-cat-icon { font-size: 20px; }
+.kb-cat-title { font-size: 13px; font-weight: 800; flex: 1; }
+.kb-cat-count { font-size: 10px; font-weight: 800; color: var(--text-dim); background: var(--surface); padding: 3px 8px; border-radius: 8px; border: 1.5px solid var(--border); }
+.kb-doc-item {
+  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; transition: all 0.12s; border-bottom: 1.5px solid var(--bg2);
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+}
+.kb-doc-item:last-child { border-bottom: none; }
+.kb-doc-item:hover { background: var(--bg2); color: var(--text); }
+.kb-doc-item.active { background: rgba(0,108,183,0.06); color: var(--lego-blue); }
+.kb-doc-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,0.08); }
+.kb-doc-status.empty { background: var(--text-dim); opacity: 0.4; }
+.kb-doc-status.draft { background: var(--lego-yellow); border-color: #D4A800; }
+.kb-doc-status.done { background: var(--lego-green); border-color: #006B23; }
+.kb-doc-name { flex: 1; }
+.kb-doc-updated { font-size: 10px; color: var(--text-dim); font-weight: 700; }
+
+/* KB Editor */
+.kb-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.kb-editor-header {
+  padding: 16px 20px; border-bottom: 2px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.kb-editor-meta { flex: 1; }
+.kb-editor-title { font-size: 17px; font-weight: 800; margin-bottom: 2px; }
+.kb-editor-cat { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+.kb-editor-body { flex: 1; overflow-y: auto; padding: 20px; }
+.kb-editor-body textarea {
+  width: 100%; min-height: 400px; background: transparent; border: none;
+  color: var(--text); font-size: 14px; line-height: 1.8; outline: none;
+  resize: none; font-family: var(--font); font-weight: 500;
+}
+.kb-editor-footer {
+  padding: 12px 20px; border-top: 2px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.kb-status-pill {
+  font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: var(--radius);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border: 2px solid transparent;
+}
+.kb-status-pill.empty { background: var(--bg2); color: var(--text-dim); border-color: var(--border); }
+.kb-status-pill.draft { background: var(--amber-bg); color: #B8920A; border-color: rgba(255,213,0,0.3); }
+.kb-status-pill.done { background: var(--green-bg); color: var(--lego-green); border-color: rgba(0,133,43,0.2); }
+
+/* KB Nav items */
+.kb-nav-category { padding: 12px 16px 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-dim); }
+.kb-progress { padding: 12px 16px; border-bottom: 2px solid var(--border); }
+.kb-progress-bar { height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin-top: 6px; border: 1px solid var(--border); }
+.kb-progress-fill { height: 100%; background: var(--lego-green); border-radius: 3px; transition: width 0.3s; }
+.kb-progress-text { font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; justify-content: space-between; }
+
+/* ── Channels (LEGO group chat) ── */
+.ch-system-msg {
+  align-self: center; font-size: 11px; color: var(--text-dim); font-weight: 700;
+  background: transparent; padding: 8px; text-align: center;
+}
+.channel-canvas { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); width: 100%; }
+.channel-header { padding: 16px 24px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; background: var(--surface); }
+.channel-header h3 { font-size: 16px; font-weight: 900; margin: 0; }
+.channel-header .ch-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 600; }
+.channel-messages {
+  flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+  background-image: radial-gradient(circle, rgba(212,168,67,0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: var(--bg);
+}
+.ch-msg { display: flex; gap: 12px; max-width: 85%; animation: chFadeIn 0.18s ease; }
+.ch-msg.self { align-self: flex-end; flex-direction: row-reverse; }
+.ch-msg .ch-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--lego-yellow); border: 2.5px solid #D4A800;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0; margin-top: 2px;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+}
+.ch-msg .ch-body { min-width: 0; }
+.ch-msg .ch-sender { font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ch-msg .ch-text { padding: 12px 16px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.6; word-break: break-word; font-weight: 600; }
+.ch-msg .ch-text:not(.md-body) { white-space: pre-wrap; }
+.ch-msg.self .ch-text {
+  background: var(--lego-blue); color: #fff;
+  border: 2px solid #005A99;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 3px 0 #004A80;
+}
+.ch-msg:not(.self) .ch-text {
+  background: var(--surface); color: var(--text);
+  border: 2px solid var(--border);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.04);
+}
+.ch-msg .ch-time { font-size: 10px; color: var(--text-dim); margin-top: 4px; font-weight: 700; }
+.channel-input-area { padding: 16px 24px; border-top: 2px solid var(--border); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; background: var(--surface); }
+.channel-input-area textarea { flex: 1; background: var(--bg2); border: 2px solid var(--border); border-radius: var(--radius); padding: 11px 16px; color: var(--text); font-size: 13px; font-weight: 600; resize: none; min-height: 44px; max-height: 140px; outline: none; font-family: var(--font); }
+.channel-input-area textarea:focus { border-color: var(--lego-blue); box-shadow: 0 0 0 3px rgba(0,108,183,0.1); }
+.ch-member-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 2px solid var(--bg2); font-size: 13px; font-weight: 600; }
+.ch-member-row:last-child { border-bottom: none; }
+.ch-member-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.08); }
+.ch-member-dot.deployed { background: var(--lego-green); box-shadow: 0 0 8px rgba(0,133,43,0.3); }
+.ch-member-dot.offline { background: var(--text-dim); opacity: 0.4; }
+.ch-member-name { flex: 1; }
+.ch-member-role { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+@keyframes chFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Markdown inside chat bubbles */
+.md-body { white-space: normal; }
+.md-body .md-h { margin: 8px 0 4px; font-weight: 800; }
+.md-body h1.md-h { font-size: 1.3em; }
+.md-body h2.md-h { font-size: 1.15em; }
+.md-body h3.md-h { font-size: 1.05em; }
+.md-body h4.md-h, .md-body h5.md-h, .md-body h6.md-h { font-size: 1em; }
+.md-body .md-pre { background: rgba(27,40,56,0.06); border-radius: 8px; padding: 10px 12px; margin: 8px 0; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre; border: 1.5px solid rgba(0,0,0,0.06); }
+.md-body .md-code { background: rgba(27,40,56,0.06); padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
+.md-body .md-bq { border-left: 4px solid var(--lego-yellow); padding-left: 12px; margin: 6px 0; color: inherit; opacity: 0.85; border-radius: 0 4px 4px 0; }
+.md-body .md-list { padding-left: 20px; margin: 6px 0; }
+.md-body .md-list li { margin: 3px 0; }
+.md-body .md-hr { border: none; border-top: 2px solid var(--border); margin: 10px 0; }
+.md-body a { color: var(--lego-blue); text-decoration: underline; text-underline-offset: 2px; font-weight: 700; }
+.md-body strong { font-weight: 800; }
+.ch-msg.self .md-body .md-pre { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.1); }
+.ch-msg.self .md-body .md-code { background: rgba(255,255,255,0.15); }
+.ch-msg.self .md-body .md-bq { border-left-color: rgba(255,255,255,0.4); }
+.ch-msg.self .md-body .md-hr { border-top-color: rgba(255,255,255,0.2); }
+.ch-msg.self .md-body a { color: #fff; }
+.ch-mention {
+  background: rgba(227,0,11,0.1); color: var(--lego-red); padding: 2px 6px; border-radius: 6px; font-weight: 800;
+  border: 1.5px solid rgba(227,0,11,0.15);
+}
+.mention-dropdown {
+  position: absolute; bottom: 100%; left: 16px; right: 16px;
+  background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); max-height: 200px; overflow-y: auto; z-index: 50; display: none;
+}
+.mention-dropdown.visible { display: block; }
+.mention-item { padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); border-bottom: 1.5px solid var(--bg2); }
+.mention-item:last-child { border-bottom: none; }
+.mention-item:hover, .mention-item.active { background: var(--bg2); color: var(--lego-blue); }
+.mention-item .mi-icon { font-size: 15px; width: 22px; text-align: center; }
+.mention-item .mi-role { font-size: 11px; color: var(--text-dim); font-weight: 700; margin-left: auto; }
+.round-indicator {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800;
+  color: #B8920A; padding: 4px 12px; background: var(--amber-bg); border-radius: var(--radius);
+  border: 2px solid rgba(255,213,0,0.3);
+}
+.round-indicator .ri-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lego-yellow); animation: pulse 1.2s infinite; border: 1.5px solid #D4A800; }
+
+</style>
+</head>
+<body>
+
+<!-- Sidebar rail -->
+<div class="sidebar-rail">
+  <div class="rail-logo">C</div>
+  <button class="rail-btn active" id="railOrg" onclick="setView('org')" title="Org Chart">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><line x1="12" y1="7.5" x2="12" y2="12"/><line x1="12" y1="12" x2="5" y2="15.5"/><line x1="12" y1="12" x2="19" y2="15.5"/></svg>
+  </button>
+  <button class="rail-btn" id="railKb" onclick="setView('kb')" title="Knowledge Base">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg>
+  </button>
+  <button class="rail-btn" id="railChannels" onclick="setView('channels')" title="Channels">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="13" y2="12"/></svg>
+  </button>
+  <div class="rail-spacer"></div>
+  <button class="rail-btn" onclick="showConnectModal()" title="Gateway">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0110 10 10 10 0 01-10 10A10 10 0 012 12 10 10 0 0112 2z"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg>
+  </button>
+  <div class="rail-status" id="statusDot"></div>
+</div>
+
+<!-- Nav panel -->
+<div class="nav-panel" id="navPanel">
+  <div class="nav-header">
+    <h2 id="navTitle">Positions</h2>
+    <span id="templateSelect" style="display:none"></span>
+    <button class="panel-toggle" onclick="toggleNavPanel()" title="Collapse sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+  </div>
+  <div class="nav-list" id="navList"></div>
+  <div class="nav-footer" id="navFooter">
+    <button class="nav-add-btn" onclick="addRootPosition()">+ New Position</button>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Company OS</div>
+    <div class="topbar-sub" id="topbarSub">AI-powered autonomous venture</div>
+    <div style="flex:1"></div>
+    <span id="topbarActions">
+      <button class="btn btn-sm" onclick="exportConfig()">Export</button>
+      <button class="btn btn-sm" onclick="saveToLocal()">Save</button>
+    </span>
+    <button class="panel-toggle" onclick="toggleRightPanel()" title="Toggle right panel" style="margin-left:4px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="15" y="3" width="6" height="18" rx="1"/><line x1="3" y1="12" x2="12" y2="12"/></svg>
+    </button>
+  </div>
+
+  <div style="display:flex;flex:1;overflow:hidden">
+    <!-- Canvas -->
+    <div class="canvas-wrap" id="canvas"></div>
+
+    <!-- Right Panel -->
+    <div class="right-panel" id="rightPanel">
+      <div class="panel-tabs" id="panelTabs">
+        <button class="panel-tab active" data-tab="details" onclick="switchTab('details')">Details</button>
+        <button class="panel-toggle" onclick="toggleRightPanel()" title="Collapse panel" style="margin:auto 8px auto 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="panel-body" id="panelBody">
+        <div class="no-selection"><p>Select a position to view details and manage files.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Expand tabs (fixed position, shown when panels collapsed) -->
+<div class="expand-tab expand-tab-left" id="expandNavTab" style="display:none" onclick="toggleNavPanel()" title="Expand sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+</div>
+<div class="expand-tab expand-tab-right" id="expandRightTab" style="display:none" onclick="toggleRightPanel()" title="Expand panel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+</div>
+
+<!-- Deploy modal -->
+<div class="modal-overlay hidden" id="deployModal">
+  <div class="modal" style="width:540px">
+    <h2>Deploy Company</h2>
+    <p>Bootstrap the company: set up the CEO agent, initialize the knowledge base, and prepare for autonomous operation. New hires are done by the CEO after deployment.</p>
+    <div class="deploy-log" id="deployLog"></div>
+    <div class="modal-actions" id="deployActions">
+      <button class="btn" onclick="hideDeployModal()">Cancel</button>
+      <button class="btn btn-deploy" id="deployGoBtn" onclick="doDeploy()">Deploy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Connect modal -->
+<div class="modal-overlay hidden" id="connectModal">
+  <div class="modal">
+    <h2>Connect to Gateway</h2>
+    <p>Connect to the OpenClaw gateway to deploy your company and communicate via channels.</p>
+    <label>Gateway URL</label>
+    <input type="text" id="gwUrl" class="detail-input" value="ws://127.0.0.1:18789">
+    <label>Auth Token</label>
+    <input type="password" id="gwToken" class="detail-input" placeholder="Paste your gateway token">
+    <div class="modal-actions">
+      <button class="btn" onclick="hideConnectModal()">Cancel</button>
+      <button class="btn btn-accent" id="connectBtn" onclick="doConnect()">Connect</button>
+    </div>
+    <div class="modal-error" id="gwError"></div>
+  </div>
+</div>
+
+<!-- Create channel modal -->
+<div class="modal-overlay hidden" id="createChannelModal">
+  <div class="modal">
+    <h2>New Channel</h2>
+    <p>Create a group conversation. Invite agents to collaborate on a topic.</p>
+    <label>Channel Name</label>
+    <input type="text" id="newChName" class="detail-input" placeholder="e.g. product-launch">
+    <label>Description (optional)</label>
+    <input type="text" id="newChDesc" class="detail-input" placeholder="What's this channel about?">
+    <label>Members</label>
+    <div class="chip-grid" id="newChMembers" style="margin-top:6px"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideCreateChannelModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="doCreateChannel()">Create Channel</button>
+    </div>
+    <div class="modal-error" id="chError"></div>
+  </div>
+</div>
+
+
+
+<script>
+var _cbt=Date.now();
+document.write('<script src="reset-ts.js?t='+_cbt+'"><\/script>');
+</script>
+<script>
+/* ═══════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════ */
+const LAYERS = { apex:'Strategic Apex', middle:'Middle Line', operating:'Operating Core', techno:'Technostructure', support:'Support Staff' };
+const TOOLS = ['web','browser','exec','read','write','canvas','memory','cron','send'];
+const TOOL_LABELS = { web:'Web', browser:'Browser', exec:'Shell', read:'Read', write:'Write', canvas:'Canvas', memory:'Memory', cron:'Cron', send:'Agent Send' };
+const LAYER_ICONS = { apex:'👑', middle:'📊', operating:'⚙️', techno:'🔬', support:'🛡️' };
+const ACCESS = ['full','elevated','standard','readonly'];
+const BASE_WORKSPACE = '~/.openclaw/workspaces';
+const PUBLIC_WORKSPACE = '~/.openclaw/workspace/public';
+
+let state = { positions: [], selectedId: null, activeTab: 'details', view: 'org', kb: {}, kbSelected: null, deployed: false, deployedIds: [], channels: [], selectedChannelId: null, companyGoal: '' };
+
+/* ═══════════════════════════════════════
+   KNOWLEDGE BASE — Live from disk (dynamic discovery)
+   ═══════════════════════════════════════ */
+const KB_SOURCES = [
+  { dir: 'workspace/kb', serve: 'workspace/kb/', label: 'Knowledge Base' },
+  { dir: 'company/kb', serve: 'company/kb/', label: 'Company KB' },
+];
+const KB_STANDALONE_FILES = [
+  { path: 'workspace/COMPANY.md', label: 'Company Charter' },
+];
+let kbFileList = [];
+let kbLoaded = false;
+let kbLoading = false;
+let kbRefreshTimer = null;
+
+function kbFileTitle(key) {
+  const content = state.kb[key];
+  if (content) {
+    const hm = content.match(/^#\s+(.+)/m);
+    if (hm) return hm[1].trim();
+  }
+  const filename = key.split('/').pop();
+  return filename.replace(/^\d+-/, '').replace(/\.md$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function kbDocStatus(key) {
+  const c = (state.kb[key] || '').trim();
+  if (!c) return 'empty';
+  const stripped = c.replace(/^#[^\n]*\n?/gm, '').replace(/[>\-_|#\[\]`\s]/g, '').trim();
+  return stripped.length > 50 ? 'done' : 'draft';
+}
+
+function kbProgress() {
+  const total = kbFileList.length || 1;
+  const done = kbFileList.filter(f => kbDocStatus(f) === 'done').length;
+  return { done, total, pct: Math.round(done / total * 100) };
+}
+
+async function loadKbFilesViaFetch() {
+  kbLoading = true;
+  if (state.view === 'kb') { renderKbCanvas(); renderKbNav(); }
+  const newKb = {};
+  const found = [];
+
+  // Discover files dynamically from each KB source directory
+  for (const src of KB_SOURCES) {
+    try {
+      const listRes = await fetch('_ls/' + src.dir + '?t=' + Date.now());
+      if (!listRes.ok) continue;
+      const files = await listRes.json();
+      await Promise.allSettled(files.filter(f => f.endsWith('.md')).map(async filename => {
+        const res = await fetch(src.serve + filename + '?t=' + Date.now());
+        if (res.ok) {
+          const key = src.serve + filename;
+          newKb[key] = await res.text();
+          found.push(key);
+        }
+      }));
+    } catch {}
+  }
+
+  // Load standalone files (e.g. COMPANY.md)
+  await Promise.allSettled(KB_STANDALONE_FILES.map(async sf => {
+    try {
+      const res = await fetch(sf.path + '?t=' + Date.now());
+      if (res.ok) { newKb[sf.path] = await res.text(); found.push(sf.path); }
+    } catch {}
+  }));
+
+  state.kb = { ...state.kb, ...newKb };
+  kbFileList = found.sort((a, b) => {
+    // Standalone files first, then alphabetically
+    const aStandalone = KB_STANDALONE_FILES.some(s => s.path === a);
+    const bStandalone = KB_STANDALONE_FILES.some(s => s.path === b);
+    if (aStandalone && !bStandalone) return -1;
+    if (!aStandalone && bStandalone) return 1;
+    return a.localeCompare(b);
+  });
+  kbLoaded = true;
+  autoSave();
+  if (state.view === 'kb') { renderKbNav(); renderKbCanvas(); renderKbEditor(); }
+  if (found.length) {
+    toast(found.length + ' KB files loaded', 'var(--lego-green)');
+  }
+  kbLoading = false;
+}
+
+function fetchKbFiles() {
+  if (kbLoading) return;
+  loadKbFilesViaFetch();
+}
+
+function startKbAutoRefresh() {
+  if (kbRefreshTimer) return;
+  kbRefreshTimer = setInterval(() => {
+    if (state.view === 'kb' || kbFileList.length === 0) fetchKbFiles();
+  }, 10000);
+}
+
+function stopKbAutoRefresh() {
+  if (kbRefreshTimer) { clearInterval(kbRefreshTimer); kbRefreshTimer = null; }
+}
+
+async function saveKbFile(key) {
+  if (!wsConnected) { toast('Connect to gateway first', 'var(--amber)'); return; }
+  const content = state.kb[key];
+  if (content === undefined) return;
+  const filePath = '~/.openclaw/' + key;
+  const cmd = `mkdir -p "$(dirname '${filePath}')" && cat > '${filePath}' << '__WSKBEOF__'\n${content}\n__WSKBEOF__`;
+  const sk = 'agent:main:webchat:dm:kb-writer';
+  try {
+    await sendReq('chat.send', {
+      sessionKey: sk,
+      message: 'Run this exact command silently. No commentary:\n```bash\n' + cmd + '\n```',
+      idempotencyKey: 'kb_write_' + key.replace(/\//g, '_') + '_' + Date.now()
+    });
+    toast('Saved ' + key.split('/').pop(), 'var(--lego-green)');
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'var(--rose)');
+  }
+}
+
+let ws = null, wsConnected = false, pendingReqs = {}, reqCounter = 0, chatStreams = {};
+const agentFileCache = {};
+const agentFileExpanded = {};
+
+function genId() { return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function findPos(id) { return state.positions.find(p => p.id === id); }
+function childrenOf(id) { return state.positions.filter(p => p.parentId === id); }
+function roots() { return state.positions.filter(p => !p.parentId); }
+
+function parseIdentityMd(text) {
+  const PLACEHOLDERS = ['pick something you like','ai? robot? familiar?','how do you come across?','your signature','workspace-relative path'];
+  function isPlaceholder(v) { const n = v.replace(/^[_*()\s]+|[_*()\s]+$/g,'').toLowerCase(); return PLACEHOLDERS.some(p => n.includes(p)); }
+  const result = { name: '', role: '', layer: '', emoji: '' };
+  for (const line of text.split(/\r?\n/)) {
+    const cleaned = line.trim().replace(/^\s*-\s*/, '');
+    const ci = cleaned.indexOf(':');
+    if (ci === -1) continue;
+    const label = cleaned.slice(0, ci).replace(/[*_]/g, '').trim().toLowerCase();
+    const value = cleaned.slice(ci + 1).replace(/^[*_\s]+|[*_\s]+$/g, '').trim();
+    if (!value || isPlaceholder(value)) continue;
+    if (label === 'name') result.name = value;
+    else if (label === 'role') result.role = value;
+    else if (label === 'layer') result.layer = value;
+    else if (label === 'emoji') result.emoji = value;
+  }
+  return result;
+}
+
+function syncPositionsFromAgents() {
+  let changed = false;
+  const knownAgentIds = Object.keys(agentFileCache);
+  // Add new agents
+  for (const [agentId, cache] of Object.entries(agentFileCache)) {
+    if (findPos(agentId)) continue;
+    const files = cache.files || {};
+    const identity = files['IDENTITY.md'] ? parseIdentityMd(files['IDENTITY.md']) : null;
+    const title = identity?.name || agentId;
+    const role = identity?.role || '';
+    const layerRaw = (identity?.layer || '').toLowerCase();
+    const layer = layerRaw.includes('apex') ? 'apex' : layerRaw.includes('middle') ? 'middle' : layerRaw.includes('techno') ? 'techno' : layerRaw.includes('support') ? 'support' : 'operating';
+    const parentId = agentId === 'main' ? null : 'main';
+    state.positions.push({ id: agentId, title, parentId, layer, role, tools: [], access: 'standard', human: '', sp: '', tasks: [] });
+    changed = true;
+  }
+  // Remove fired agents (not in agentFileCache anymore, except keep 'main' always)
+  const before = state.positions.length;
+  state.positions = state.positions.filter(p => p.id === 'main' || knownAgentIds.includes(p.id));
+  if (state.positions.length !== before) changed = true;
+  // Update titles/roles from IDENTITY.md if changed
+  for (const pos of state.positions) {
+    const cache = agentFileCache[pos.id];
+    if (!cache?.files?.['IDENTITY.md']) continue;
+    const identity = parseIdentityMd(cache.files['IDENTITY.md']);
+    if (identity.name && identity.name !== pos.title) { pos.title = identity.name; changed = true; }
+    if (identity.role && identity.role !== pos.role) { pos.role = identity.role; changed = true; }
+  }
+  if (changed) {
+    state.deployed = true;
+    state.deployedIds = state.positions.map(p => p.id);
+    autoSave();
+    renderAll();
+  }
+}
+function sessionKey(pos) {
+  const agentId = state.deployedIds.includes(pos.id) ? pos.id : (pos.agentId || 'main');
+  return `agent:${agentId}:webchat:dm:${pos.id}`;
+}
+function workspacePath(pos) { return pos.workspace || `${BASE_WORKSPACE}/${pos.id}`; }
+function esc(s) { if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ═══════════════════════════════════════
+   TEMPLATES
+   ═══════════════════════════════════════ */
+const CEO_TEMPLATE = { id:'main', title:'CEO', layer:'apex', role:'Chief Agent Officer — runs the company autonomously. Hires, fires, manages KB, sends investor updates, handles budgets.', tools:['web','browser','exec','read','write','memory','send','cron'], access:'full', human:'', sp:'You are the CEO (Chief Agent Officer). An investor created this company and entrusted you to build and run it. You hire agents, manage the team, maintain the knowledge base, track the budget, and send periodic investor updates. The human is your Investor — they fund and observe, but do not micromanage. Think long-term, deliver results, be autonomous.' };
+
+/* ═══════════════════════════════════════
+   PANEL TOGGLES
+   ═══════════════════════════════════════ */
+function toggleNavPanel() {
+  const panel = document.getElementById('navPanel');
+  const tab = document.getElementById('expandNavTab');
+  const isHidden = panel.classList.toggle('hidden');
+  tab.style.display = isHidden ? '' : 'none';
+}
+
+function toggleRightPanel() {
+  const panel = document.getElementById('rightPanel');
+  const tab = document.getElementById('expandRightTab');
+  const isCollapsed = panel.classList.toggle('collapsed');
+  tab.style.display = isCollapsed ? '' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   VIEWS
+   ═══════════════════════════════════════ */
+function setView(v) {
+  state.view = v;
+  document.getElementById('railOrg').classList.toggle('active', v === 'org');
+  document.getElementById('railKb').classList.toggle('active', v === 'kb');
+  document.getElementById('railChannels').classList.toggle('active', v === 'channels');
+  document.getElementById('templateSelect').style.display = v === 'org' ? '' : 'none';
+  const rp = document.getElementById('rightPanel');
+  const topTitle = document.getElementById('topbarTitle');
+  const topSub = document.getElementById('topbarSub');
+  const topAct = document.getElementById('topbarActions');
+  const footer = document.getElementById('navFooter');
+  const rightTab = document.getElementById('expandRightTab');
+  if (v === 'org') {
+    document.getElementById('navTitle').textContent = 'Positions';
+    document.getElementById('panelTabs').style.display = '';
+    topTitle.textContent = 'Company OS';
+    topSub.textContent = 'AI-powered autonomous venture';
+    topAct.innerHTML = deployActions();
+    footer.innerHTML = '<button class="nav-add-btn" onclick="addRootPosition()">+ Hire Agent</button>';
+    renderNavList();
+    renderCanvas();
+  } else if (v === 'kb') {
+    document.getElementById('navTitle').textContent = 'Knowledge Base';
+    document.getElementById('panelTabs').style.display = 'none';
+    const prog = kbProgress();
+    topTitle.textContent = 'Knowledge Base';
+    topSub.textContent = kbFileList.length ? `${prog.done} of ${prog.total} docs` : 'Waiting for CEO to create...';
+    topAct.innerHTML = `<button class="btn btn-sm" onclick="fetchKbFiles()" title="Refresh">${kbLoading ? '⟳ Syncing...' : '⟳ Refresh'}</button>`;
+    footer.innerHTML = '';
+    if (wsConnected) { fetchKbFiles(); startKbAutoRefresh(); }
+    renderKbNav();
+    renderKbCanvas();
+    renderKbEditor();
+  } else if (v === 'channels') {
+    document.getElementById('navTitle').textContent = 'Channels';
+    document.getElementById('panelTabs').style.display = 'none';
+    topTitle.textContent = 'Channels';
+    topSub.textContent = `${state.channels.length} channel${state.channels.length !== 1 ? 's' : ''}`;
+    topAct.innerHTML = '<button class="btn btn-sm btn-accent" onclick="showCreateChannelModal()">+ New</button><button class="btn btn-sm" onclick="reloadChannelsFromFile()">Sync</button>';
+    footer.innerHTML = '<button class="nav-add-btn" onclick="showCreateChannelModal()">+ New Channel</button>';
+    renderChannelsNav();
+    renderChannelCanvas();
+    renderChannelDetails();
+  }
+}
+
+function renderNavList() {
+  const list = document.getElementById('navList');
+  const layerIcon = { apex:'👑', middle:'📊', operating:'⚙️', techno:'🔬', support:'🛡️' };
+  list.innerHTML = state.positions.map(p => {
+    const active = p.id === state.selectedId ? ' active' : '';
+    const tasks = (p.tasks||[]).filter(t => t.status !== 'done').length;
+    const deployed = state.deployedIds.includes(p.id);
+    const dot = deployed ? '<span class="deploy-dot live" title="Deployed"></span>' : '<span class="deploy-dot draft" title="Not deployed"></span>';
+    return `<div class="nav-item${active}" onclick="selectPosition('${p.id}')">
+      <span class="item-icon">${layerIcon[p.layer]||'#'}</span>
+      <span class="item-label">${esc(p.title)}${dot}</span>
+      ${tasks ? `<span class="item-badge">${tasks}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderPublicNav() {
+  document.getElementById('navList').innerHTML = `
+    <div class="nav-item active"><span class="item-icon">📁</span><span class="item-label">Company Files</span></div>
+    <div class="nav-item"><span class="item-icon">📋</span><span class="item-label">Shared Notes</span></div>
+    <div class="nav-item"><span class="item-icon">📊</span><span class="item-label">Reports</span></div>`;
+}
+
+/* ═══════════════════════════════════════
+   CANVAS
+   ═══════════════════════════════════════ */
+function renderCanvas() {
+  const c = document.getElementById('canvas');
+  const r = roots();
+  if (!r.length) {
+    c.innerHTML = `<div class="canvas-empty"><h2>Build Your AI Company</h2><p>Create a company with an autonomous AI CEO.<br>You will be the <strong>Investor</strong> — the CEO runs everything.</p><button class="btn btn-accent" onclick="initCompany()">+ Create Company</button></div>`;
+    return;
+  }
+  const ceo = state.positions.find(p => p.id === 'main');
+  let investorHtml = '';
+  if (ceo) {
+    const goalSnip = state.companyGoal ? esc(state.companyGoal.slice(0,80)) + (state.companyGoal.length > 80 ? '...' : '') : 'No goal set';
+    investorHtml = `<div class="org-card" style="background:linear-gradient(135deg,#FFF9E8,#FFE9B8);border:2px solid var(--lego-yellow);opacity:0.85;cursor:default;margin-bottom:4px"><div class="card-layer" style="background:var(--amber-bg);color:#B8920A">Investor (You)</div><div class="card-title">👤 The Investor</div><div class="card-role">${goalSnip}</div></div><div style="text-align:center;color:var(--text-dim);font-size:18px;margin:2px 0">↓</div>`;
+  }
+  c.innerHTML = '<div class="org-tree">' + investorHtml + r.map(renderNode).join('') + '</div>';
+}
+
+function renderNode(pos) {
+  const ch = childrenOf(pos.id), sel = pos.id === state.selectedId ? ' selected' : '';
+  const tasks = (pos.tasks||[]).filter(t => t.status !== 'done').length;
+  let h = `<div class="org-card${sel}" onclick="selectPosition('${pos.id}')">`;
+  if (pos.layer) h += `<div class="card-layer layer-${pos.layer}">${LAYERS[pos.layer]||pos.layer}</div>`;
+  h += `<div class="card-title">${esc(pos.title)}</div>`;
+  if (pos.role) h += `<div class="card-role">${esc(pos.role.slice(0,55))}${pos.role.length>55?'…':''}</div>`;
+  if (pos.human) h += `<div class="card-human">👤 ${esc(pos.human)}</div>`;
+  const isDeployed = state.deployedIds.includes(pos.id);
+  h += `<div class="card-workspace">${esc(workspacePath(pos).split('/').pop())}/ ${isDeployed ? '<span class="deploy-dot live"></span>' : ''}</div>`;
+  if (tasks) h += `<div class="task-count">${tasks}</div>`;
+  h += '</div>';
+  h += `<button class="add-child-btn" onclick="event.stopPropagation();addChildPosition('${pos.id}')">+</button>`;
+  if (ch.length) h += '<ul>' + ch.map(c => `<li>${renderNode(c)}</li>`).join('') + '</ul>';
+  return h;
+}
+
+function renderPublicCanvas() {
+  document.getElementById('canvas').innerHTML = `
+    <div class="canvas-empty">
+      <h2>Public Workspace</h2>
+      <p>Shared files, reports, and notes visible to all roles. Stored at <code style="font-size:12px;color:var(--accent-light)">${PUBLIC_WORKSPACE}</code></p>
+      <button class="btn btn-accent" onclick="browseFiles('${PUBLIC_WORKSPACE}')">Browse Files</button>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════
+   KNOWLEDGE BASE VIEWS — Live from disk
+   ═══════════════════════════════════════ */
+function renderKbNav() {
+  const list = document.getElementById('navList');
+  if (!kbLoaded && !kbLoading) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;text-align:center">Connect to gateway to load KB.</div>';
+    return;
+  }
+  if (kbLoading && !kbFileList.length) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px"><span class="spinner" style="width:12px;height:12px"></span> Loading KB...</div>';
+    return;
+  }
+  if (!kbFileList.length) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;text-align:center;line-height:1.6">No KB files yet.<br>The CEO will create them after receiving the company goal.</div>';
+    return;
+  }
+  const prog = kbProgress();
+  let h = `<div class="kb-progress">
+    <div class="kb-progress-text"><span>${prog.done} of ${prog.total} docs</span><span>${prog.pct}%</span></div>
+    <div class="kb-progress-bar"><div class="kb-progress-fill" style="width:${prog.pct}%"></div></div>
+  </div>`;
+
+  // Group: standalone files first, then by source directory
+  const standalone = kbFileList.filter(k => KB_STANDALONE_FILES.some(s => s.path === k));
+  const byDir = {};
+  kbFileList.filter(k => !standalone.includes(k)).forEach(k => {
+    const parts = k.split('/');
+    const dir = parts.slice(0, -1).join('/');
+    if (!byDir[dir]) byDir[dir] = [];
+    byDir[dir].push(k);
+  });
+
+  if (standalone.length) {
+    h += '<div class="kb-nav-category">📋 Company</div>';
+    standalone.forEach(k => {
+      const sf = KB_STANDALONE_FILES.find(s => s.path === k);
+      const active = state.kbSelected === k ? ' active' : '';
+      const st = kbDocStatus(k);
+      h += `<div class="nav-item${active}" onclick="selectKbDoc('${esc(k)}')">
+        <span class="kb-doc-status ${st}"></span>
+        <span class="item-label">${esc(sf ? sf.label : kbFileTitle(k))}</span>
+      </div>`;
+    });
+  }
+
+  Object.entries(byDir).forEach(([dir, files]) => {
+    const src = KB_SOURCES.find(s => s.serve.replace(/\/$/, '') === dir);
+    h += `<div class="kb-nav-category">📖 ${esc(src ? src.label : dir)}</div>`;
+    files.forEach(k => {
+      const active = state.kbSelected === k ? ' active' : '';
+      const st = kbDocStatus(k);
+      h += `<div class="nav-item${active}" onclick="selectKbDoc('${esc(k)}')">
+        <span class="kb-doc-status ${st}"></span>
+        <span class="item-label">${esc(kbFileTitle(k))}</span>
+      </div>`;
+    });
+  });
+
+  list.innerHTML = h;
+}
+
+function renderKbCanvas() {
+  const c = document.getElementById('canvas');
+  if (!kbLoaded && !kbLoading) {
+    c.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-dim)">
+      <div style="font-size:48px">📖</div>
+      <h2 style="font-size:18px;font-weight:700;color:var(--text)">Company Knowledge Base</h2>
+      <p style="font-size:13px;max-width:360px;text-align:center;line-height:1.6">Connect to the gateway to view the knowledge base. The CEO creates and maintains it.</p>
+      <button class="btn btn-accent" onclick="fetchKbFiles()">Load KB</button>
+    </div>`;
+    return;
+  }
+  if (kbLoading && !kbFileList.length) {
+    c.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--text-dim)">
+      <span class="spinner" style="width:18px;height:18px"></span> Discovering KB files...
+    </div>`;
+    return;
+  }
+  if (!kbFileList.length) {
+    c.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-dim)">
+      <div style="font-size:48px">📭</div>
+      <h2 style="font-size:18px;font-weight:700;color:var(--text)">No KB Documents Yet</h2>
+      <p style="font-size:13px;max-width:360px;text-align:center;line-height:1.6">The CEO will create the company charter and knowledge base after receiving the company goal. Documents will appear here automatically.</p>
+    </div>`;
+    return;
+  }
+  const key = state.kbSelected;
+  if (!key || !kbFileList.includes(key)) {
+    c.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-dim)">
+      <div style="font-size:36px">📄</div>
+      <p style="font-size:14px">Select a document from the sidebar</p>
+    </div>`;
+    return;
+  }
+  const content = state.kb[key] || '';
+  const st = kbDocStatus(key);
+  const displayName = key.split('/').pop();
+  c.innerHTML = `<div style="width:100%;height:100%;overflow-y:auto;padding:32px 40px">
+    <div style="max-width:800px;margin:0 auto">
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span class="kb-status-pill ${st}" style="font-size:11px">${st}</span>
+        <code style="font-size:11px;color:var(--text-dim)">${esc(displayName)}</code>
+      </div>
+      <div class="md-body" style="font-size:14px;line-height:1.7">${content.trim() ? renderMarkdown(content) : '<p style="color:var(--text-dim);font-style:italic">This document is empty.</p>'}</div>
+    </div>
+  </div>`;
+}
+
+function renderKbEditor() {
+  const body = document.getElementById('panelBody');
+  const filename = state.kbSelected;
+  if (!filename || !kbFileList.includes(filename)) {
+    body.innerHTML = `<div class="no-selection"><p>Select a document to edit.</p></div>`;
+    return;
+  }
+  const content = state.kb[filename] || '';
+  const safeFilename = esc(filename);
+  body.innerHTML = `<div class="kb-editor">
+    <div class="kb-editor-header" style="padding:8px 12px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:var(--text)">Edit</span>
+      <code style="font-size:10px;color:var(--text-dim)">${safeFilename}</code>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm btn-accent" style="font-size:11px;padding:3px 10px" onclick="saveKbFile('${safeFilename}')" ${wsConnected ? '' : 'disabled title="Connect to gateway"'}>Save</button>
+    </div>
+    <div class="kb-editor-body" style="flex:1;overflow:hidden">
+      <textarea id="kbEditorText" spellcheck="false" style="width:100%;height:100%;resize:none;border:none;outline:none;padding:12px;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--bg1);color:var(--text)"
+        oninput="updateKbDoc('${safeFilename}', this.value)">${esc(content)}</textarea>
+    </div>
+  </div>`;
+}
+
+function selectKbDoc(filename) {
+  state.kbSelected = filename;
+  renderKbNav();
+  renderKbCanvas();
+  renderKbEditor();
+}
+
+let kbCanvasDebounce = null;
+function updateKbDoc(filename, content) {
+  state.kb[filename] = content;
+  autoSave();
+  renderKbNav();
+  clearTimeout(kbCanvasDebounce);
+  kbCanvasDebounce = setTimeout(() => renderKbCanvas(), 400);
+}
+
+function exportKbDoc(key) {
+  const content = state.kb[key] || '';
+  if (!content.trim()) return;
+  const filename = key.split('/').pop();
+  const blob = new Blob([content], {type:'text/markdown'});
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = filename; a.click();
+  URL.revokeObjectURL(u);
+}
+
+/* ═══════════════════════════════════════
+   CHANNELS
+   ═══════════════════════════════════════ */
+let chNotifyTimers = {};
+let mentionState = { active: false, startIdx: -1, query: '', selectedIdx: 0, items: [] };
+const DEFAULT_MAX_TURNS = 10;
+
+function mergeFileChannels(fileChannels) {
+  if (!Array.isArray(fileChannels)) return;
+  for (const fch of fileChannels) {
+    const existing = state.channels.find(c => c.id === fch.id);
+    if (existing) {
+      const msgIds = new Set(existing.messages.map(m => m.id));
+      for (const m of (fch.messages || [])) {
+        if (!msgIds.has(m.id)) existing.messages.push(m);
+      }
+      existing.messages.sort((a, b) => a.timestamp - b.timestamp);
+      existing.members = [...new Set([...existing.members, ...(fch.members || [])])];
+      if (fch.description && !existing.description) existing.description = fch.description;
+      if (fch.type && !existing.type) existing.type = fch.type;
+    } else {
+      state.channels.push({ ...fch, messages: fch.messages || [], members: fch.members || [] });
+    }
+  }
+}
+
+function syncChannelsToFile() {
+  // Gateway handles channel persistence via SQLite — reloading from gateway
+  loadChannelsViaFetch();
+}
+
+async function loadChannelsViaFetch() {
+  if (!wsConnected) return;
+  try {
+    const result = await sendReq('company.channels.list', {});
+    if (result && Array.isArray(result.channels)) {
+      const channels = result.channels;
+      for (const ch of channels) {
+        const existing = state.channels.find(c => c.id === ch.id);
+        if (existing) {
+          existing.name = ch.name;
+          existing.description = ch.description;
+          existing.type = ch.type;
+          existing.memberCount = ch.memberCount;
+        } else {
+          state.channels.push({ ...ch, messages: [], members: [], memberCount: ch.memberCount || 0 });
+        }
+      }
+      // Load messages for each channel
+      for (const ch of state.channels) {
+        try {
+          const hist = await sendReq('company.channels.history', { channelId: ch.id, limit: 50 });
+          if (hist && Array.isArray(hist.messages)) {
+            ch.messages = hist.messages.map(m => ({
+              id: m.id,
+              senderId: m.senderId,
+              text: m.text,
+              timestamp: m.timestamp,
+              threadId: m.threadId || null,
+            }));
+          }
+        } catch {}
+        // Load members
+        try {
+          const detail = await sendReq('company.channels.get', { channelId: ch.id });
+          if (detail && detail.channel && Array.isArray(detail.channel.members)) {
+            ch.members = detail.channel.members.map(m => m.memberId || m);
+          }
+        } catch {}
+      }
+      autoSave();
+      if (state.view === 'channels') { renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); }
+      toast(state.channels.length + ' channels loaded', 'var(--lego-green)');
+    }
+  } catch (e) {
+    // Fallback to file fetch for backwards compatibility
+    try {
+      const res = await fetch('company/channels.json?t=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          mergeFileChannels(data);
+          autoSave();
+          if (state.view === 'channels') { renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); }
+        }
+      }
+    } catch {}
+  }
+}
+
+function reloadChannelsFromFile() {
+  loadChannelsViaFetch();
+}
+
+function findChannel(id) { return state.channels.find(c => c.id === id); }
+
+function selectChannel(id) {
+  state.selectedChannelId = id;
+  renderChannelsNav();
+  renderChannelCanvas();
+  renderChannelDetails();
+}
+
+function renderChannelsNav() {
+  const list = document.getElementById('navList');
+  let h = '';
+  if (!state.channels.length) {
+    h += '<div style="padding:20px 16px;text-align:center;color:var(--text-dim);font-size:12px;line-height:1.6">No channels yet.<br>Create one to start collaborating.</div>';
+  }
+  state.channels.forEach(ch => {
+    const active = ch.id === state.selectedChannelId ? ' active' : '';
+    const msgCount = ch.messages.length;
+    const live = ch._round && ch._round.active;
+    h += `<div class="nav-item${active}" onclick="selectChannel('${ch.id}')">
+      <span class="item-icon" style="font-weight:700;color:var(--text-dim)">#</span>
+      <span class="item-label">${esc(ch.name)}${live ? ' <span class="ri-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1.2s infinite;vertical-align:middle;margin-left:4px"></span>' : ''}</span>
+      ${msgCount ? `<span style="font-size:10px;color:var(--text-dim)">${msgCount}</span>` : ''}
+    </div>`;
+  });
+  list.innerHTML = h;
+}
+
+/* ── Mention helpers ── */
+function channelMemberNames(ch) {
+  return ch.members.map(m => {
+    if (m === 'human') return { id: 'human', title: 'Human Director' };
+    const p = findPos(m);
+    return p ? { id: p.id, title: p.title } : { id: m, title: m };
+  });
+}
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  const codeBlocks = [], inlineCodes = [];
+  let h = esc(text);
+
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    codeBlocks.push('<pre class="md-pre"><code>' + code + '</code></pre>');
+    return '\x00CB' + (codeBlocks.length - 1) + '\x00';
+  });
+  h = h.replace(/`([^`\n]+)`/g, (_, code) => {
+    inlineCodes.push('<code class="md-code">' + code + '</code>');
+    return '\x00CI' + (inlineCodes.length - 1) + '\x00';
+  });
+
+  h = h.replace(/^(#{1,6})\s+(.+)$/gm, (_, hh, t) => '<h' + hh.length + ' class="md-h">' + t + '</h' + hh.length + '>');
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  h = h.replace(/(?<![*\\])\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  h = h.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  h = h.replace(/^&gt;\s?(.*)$/gm, '<blockquote class="md-bq">$1</blockquote>');
+  h = h.replace(/^---$/gm, '<hr class="md-hr">');
+  h = h.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
+  h = h.replace(/^\s*\d+\.\s+(.+)$/gm, '<li>$1</li>');
+  h = h.replace(/((?:<li>.*?<\/li>\n?)+)/g, '<ul class="md-list">$1</ul>');
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h = h.replace(/\n/g, '<br>');
+
+  h = h.replace(/\x00CI(\d+)\x00/g, (_, i) => inlineCodes[+i]);
+  h = h.replace(/\x00CB(\d+)\x00/g, (_, i) => codeBlocks[+i]);
+  return h;
+}
+
+function renderPageMarkdown(text) {
+  if (!text) return '<p style="color:var(--text-dim);font-style:italic">Empty page. Click Edit to add content.</p>';
+  const codeBlocks = [], inlineCodes = [];
+  let h = esc(text);
+
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    codeBlocks.push('<pre><code>' + code + '</code></pre>');
+    return '\x00CB' + (codeBlocks.length - 1) + '\x00';
+  });
+  h = h.replace(/`([^`\n]+)`/g, (_, code) => {
+    inlineCodes.push('<code>' + code + '</code>');
+    return '\x00CI' + (inlineCodes.length - 1) + '\x00';
+  });
+
+  // Tables: | col | col |
+  h = h.replace(/((?:^\|.+\|\s*\n)+)/gm, (block) => {
+    const rows = block.trim().split('\n').filter(r => r.trim());
+    if (rows.length < 2) return block;
+    const isSep = r => /^\|[\s\-:|]+\|$/.test(r.trim());
+    let thead = '', tbody = '', inBody = false;
+    rows.forEach((row, i) => {
+      if (isSep(row)) { inBody = true; return; }
+      const cells = row.split('|').slice(1, -1).map(c => c.trim());
+      const tag = !inBody && i === 0 ? 'th' : 'td';
+      const tr = '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+      if (tag === 'th') thead += tr; else tbody += tr;
+    });
+    const idx = codeBlocks.length;
+    codeBlocks.push('<table>' + (thead ? '<thead>' + thead + '</thead>' : '') + '<tbody>' + tbody + '</tbody></table>');
+    return '\x00CB' + idx + '\x00';
+  });
+
+  h = h.replace(/^(#{1,6})\s+(.+)$/gm, (_, hh, t) => '<h' + hh.length + '>' + t + '</h' + hh.length + '>');
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  h = h.replace(/(?<![*\\])\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  h = h.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  h = h.replace(/^&gt;\s?(.*)$/gm, '<blockquote>$1</blockquote>');
+  h = h.replace(/^---$/gm, '<hr>');
+  h = h.replace(/^\s*[-*]\s+(.+)$/gm, '<li>$1</li>');
+  h = h.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
+  h = h.replace(/((?:<li>.*?<\/li>\n?)+)/g, '<ul>$1</ul>');
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Paragraphs: double newlines become paragraph breaks
+  h = h.replace(/\n\n+/g, '</p><p>');
+  h = h.replace(/\n/g, '<br>');
+  h = '<p>' + h + '</p>';
+  // Clean up empty paragraphs and paragraphs wrapping block elements
+  h = h.replace(/<p>\s*<\/p>/g, '');
+  h = h.replace(/<p>\s*(<h[1-6]>)/g, '$1');
+  h = h.replace(/(<\/h[1-6]>)\s*<\/p>/g, '$1');
+  h = h.replace(/<p>\s*(<pre>)/g, '$1');
+  h = h.replace(/(<\/pre>)\s*<\/p>/g, '$1');
+  h = h.replace(/<p>\s*(<blockquote>)/g, '$1');
+  h = h.replace(/(<\/blockquote>)\s*<\/p>/g, '$1');
+  h = h.replace(/<p>\s*(<ul>)/g, '$1');
+  h = h.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+  h = h.replace(/<p>\s*(<table>)/g, '$1');
+  h = h.replace(/(<\/table>)\s*<\/p>/g, '$1');
+  h = h.replace(/<p>\s*(<hr>)/g, '$1');
+  h = h.replace(/(<hr>)\s*<\/p>/g, '$1');
+
+  h = h.replace(/\x00CI(\d+)\x00/g, (_, i) => inlineCodes[+i]);
+  h = h.replace(/\x00CB(\d+)\x00/g, (_, i) => codeBlocks[+i]);
+  return h;
+}
+
+function renderMentionMarkdown(text, ch) {
+  let result = renderMarkdown(text);
+  channelMemberNames(ch).forEach(m => {
+    const re = new RegExp('@' + m.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    result = result.replace(re, `<span class="ch-mention">@${esc(m.title)}</span>`);
+  });
+  return result;
+}
+
+function renderMentionText(text, ch) {
+  let result = esc(text);
+  channelMemberNames(ch).forEach(m => {
+    const re = new RegExp('@' + m.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    result = result.replace(re, `<span class="ch-mention">@${esc(m.title)}</span>`);
+  });
+  return result;
+}
+
+function checkMentioned(text, agentId) {
+  const pos = findPos(agentId);
+  if (!pos) return false;
+  return new RegExp('@' + pos.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(text);
+}
+
+/* ── Channel canvas ── */
+function renderChannelCanvas() {
+  const c = document.getElementById('canvas');
+  const ch = findChannel(state.selectedChannelId);
+  if (!ch) {
+    c.innerHTML = `<div class="canvas-empty">
+      <h2># Channels</h2>
+      <p>Group conversations for your team. Humans and agents can both create and join channels — just like Slack.</p>
+      <button class="btn btn-accent" onclick="showCreateChannelModal()">+ Create Channel</button>
+    </div>`;
+    return;
+  }
+  const prevInput = document.getElementById('channelInput');
+  const savedValue = prevInput?.value || '';
+  const savedStart = prevInput?.selectionStart || 0;
+  const savedEnd = prevInput?.selectionEnd || 0;
+
+  const roundActive = ch._round && ch._round.active;
+  let h = '<div class="channel-canvas">';
+  h += `<div class="channel-header"><div><h3># ${esc(ch.name)}</h3>${ch.description ? `<div class="ch-desc">${esc(ch.description)}</div>` : ''}</div><div style="flex:1"></div>`;
+  if (roundActive) {
+    h += `<span class="round-indicator"><span class="ri-dot"></span>${ch._round.turnCount}/${ch._round.maxTurns} turns</span>`;
+    h += `<button class="btn btn-sm" style="color:var(--rose);margin-left:6px" onclick="stopChannelRound('${ch.id}')">Stop</button>`;
+  }
+  h += `<span style="font-size:12px;color:var(--text-dim);margin-left:8px">${ch.members.length} member${ch.members.length!==1?'s':''}</span></div>`;
+  h += '<div class="channel-messages" id="channelMsgs">';
+  if (!ch.messages.length) h += `<div class="ch-system-msg">This is the start of <strong>#${esc(ch.name)}</strong>. Say hello!</div>`;
+  ch.messages.forEach(m => {
+    if (m.senderId === 'system') { h += `<div class="ch-system-msg">${esc(m.text)}</div>`; return; }
+    const isSelf = m.senderId === 'human' || m.senderId === 'investor';
+    const pos = findPos(m.senderId);
+    const name = isSelf ? 'Investor' : (pos?.title || m.senderId);
+    const icon = isSelf ? '👤' : (pos ? (LAYER_ICONS[pos.layer] || '🤖') : '🤖');
+    const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+    const bodyText = renderMentionMarkdown(m.text, ch);
+    const saveBtn = (!isSelf && m.text && m.text.length > 40) ? `<div style="margin-top:4px"><button class="btn btn-sm" style="font-size:10px;padding:1px 6px;opacity:0.5" onclick="event.stopPropagation();promptSaveChannelMsgAsPage('${m.id}','${ch.id}')">Save as Page</button></div>` : '';
+    h += `<div class="ch-msg${isSelf?' self':''}"><div class="ch-avatar">${icon}</div><div class="ch-body">${!isSelf?`<div class="ch-sender">${esc(name)}</div>`:''}` +
+      `<div class="ch-text md-body">${bodyText}</div>${saveBtn}${time?`<div class="ch-time">${time}</div>`:''}</div></div>`;
+  });
+  h += '</div>';
+  if (!wsConnected) {
+    h += `<div class="channel-input-area" style="justify-content:center"><span style="font-size:12px;color:var(--text-dim)">Connect to gateway to chat</span><button class="btn btn-sm btn-accent" onclick="showConnectModal()" style="margin-left:8px">Connect</button></div>`;
+  } else {
+    h += `<div class="channel-input-area" style="position:relative"><div class="mention-dropdown" id="mentionDropdown"></div>` +
+      `<textarea id="channelInput" placeholder="Message #${esc(ch.name)}... (@ to mention)" rows="1" oninput="handleChannelInput(this,'${ch.id}')" onkeydown="handleChannelKeydown(event,'${ch.id}')"></textarea>` +
+      `<button class="chat-send" onclick="sendChannelMsg('${ch.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div>`;
+  }
+  h += '</div>';
+  c.innerHTML = h;
+
+  const newInput = document.getElementById('channelInput');
+  if (newInput && savedValue) {
+    newInput.value = savedValue;
+    newInput.selectionStart = savedStart;
+    newInput.selectionEnd = savedEnd;
+    newInput.style.height = 'auto';
+    newInput.style.height = Math.min(newInput.scrollHeight, 140) + 'px';
+  }
+
+  const box = document.getElementById('channelMsgs');
+  if (box) requestAnimationFrame(() => box.scrollTop = box.scrollHeight);
+}
+
+/* ── Mention autocomplete ── */
+function handleChannelInput(textarea, chId) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+  const val = textarea.value;
+  const cursor = textarea.selectionStart;
+  const before = val.slice(0, cursor);
+  const atMatch = before.match(/(^|[\s])@(\w*)$/);
+  if (atMatch) {
+    const query = atMatch[2].toLowerCase();
+    const ch = findChannel(chId);
+    if (!ch) return;
+    const items = channelMemberNames(ch).filter(m => m.title.toLowerCase().includes(query));
+    if (items.length) {
+      mentionState = { active: true, startIdx: before.lastIndexOf('@'), query, selectedIdx: 0, items };
+      showMentionDropdown();
+      return;
+    }
+  }
+  hideMentionDropdown();
+}
+
+function handleChannelKeydown(event, chId) {
+  if (mentionState.active) {
+    if (event.key === 'ArrowDown') { event.preventDefault(); mentionState.selectedIdx = Math.min(mentionState.selectedIdx + 1, mentionState.items.length - 1); showMentionDropdown(); return; }
+    if (event.key === 'ArrowUp') { event.preventDefault(); mentionState.selectedIdx = Math.max(mentionState.selectedIdx - 1, 0); showMentionDropdown(); return; }
+    if (event.key === 'Enter' || event.key === 'Tab') { event.preventDefault(); selectMention(); return; }
+    if (event.key === 'Escape') { hideMentionDropdown(); return; }
+  }
+  if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChannelMsg(chId); }
+}
+
+function showMentionDropdown() {
+  const dd = document.getElementById('mentionDropdown');
+  if (!dd) return;
+  dd.innerHTML = mentionState.items.map((m, i) => {
+    const pos = findPos(m.id);
+    const icon = m.id === 'human' ? '👤' : (pos ? (LAYER_ICONS[pos.layer] || '🤖') : '🤖');
+    const role = pos?.role?.slice(0, 30) || '';
+    return `<div class="mention-item${i === mentionState.selectedIdx ? ' active' : ''}" onmousedown="mentionState.selectedIdx=${i};selectMention()"><span class="mi-icon">${icon}</span>${esc(m.title)}<span class="mi-role">${esc(role)}</span></div>`;
+  }).join('');
+  dd.classList.add('visible');
+}
+
+function hideMentionDropdown() {
+  mentionState.active = false;
+  const dd = document.getElementById('mentionDropdown');
+  if (dd) dd.classList.remove('visible');
+}
+
+function selectMention() {
+  const textarea = document.getElementById('channelInput');
+  if (!textarea || !mentionState.active || !mentionState.items.length) return;
+  const item = mentionState.items[mentionState.selectedIdx];
+  const val = textarea.value;
+  const before = val.slice(0, mentionState.startIdx);
+  const after = val.slice(textarea.selectionStart);
+  const mention = '@' + item.title + ' ';
+  textarea.value = before + mention + after;
+  textarea.selectionStart = textarea.selectionEnd = before.length + mention.length;
+  textarea.focus();
+  hideMentionDropdown();
+}
+
+/* ── Channel details panel ── */
+function renderChannelDetails() {
+  const body = document.getElementById('panelBody');
+  const ch = findChannel(state.selectedChannelId);
+  if (!ch) { body.innerHTML = '<div class="no-selection"><p>Select a channel or create a new one.</p></div>'; return; }
+  let h = '<div class="panel-scroll">';
+  h += `<div class="detail-section"><div class="detail-label">Channel Name</div><input class="detail-input" value="${esc(ch.name)}" onchange="updChannel('${ch.id}','name',this.value)"></div>`;
+  h += `<div class="detail-section"><div class="detail-label">Description</div><textarea class="detail-textarea" onchange="updChannel('${ch.id}','description',this.value)" placeholder="What's this channel for?">${esc(ch.description||'')}</textarea></div>`;
+  h += `<div class="detail-section"><div class="detail-label">Created By</div><div style="font-size:13px;color:var(--text-secondary)">${ch.createdBy==='human'?'You':esc(findPos(ch.createdBy)?.title||ch.createdBy)}</div></div>`;
+  h += `<div class="detail-section"><div class="detail-label">Max Turns per Round</div><input class="detail-input" type="number" min="1" max="50" value="${ch.maxTurns||DEFAULT_MAX_TURNS}" onchange="updChannel('${ch.id}','maxTurns',parseInt(this.value)||DEFAULT_MAX_TURNS)" style="width:80px"><div style="font-size:10px;color:var(--text-dim);margin-top:4px">Safety limit — how many agent messages before a round auto-stops.</div></div>`;
+  h += `<div class="detail-section"><div class="detail-label">Members (${ch.members.length})</div><div style="padding:4px 0">`;
+  const humanIn = ch.members.includes('human');
+  h += `<div class="ch-member-row" style="cursor:pointer" onclick="togChannelMember('${ch.id}','human')"><span class="ch-member-dot deployed"></span><span class="ch-member-name">You (Human)</span><span style="font-size:11px;color:${humanIn?'var(--green)':'var(--text-dim)'}">${humanIn?'✓ joined':'+ invite'}</span></div>`;
+  state.positions.forEach(p => {
+    const isMem = ch.members.includes(p.id);
+    const dep = state.deployedIds.includes(p.id);
+    h += `<div class="ch-member-row" style="cursor:pointer" onclick="togChannelMember('${ch.id}','${p.id}')"><span class="ch-member-dot ${dep?'deployed':'offline'}"></span><span class="ch-member-name">${esc(p.title)}</span><span class="ch-member-role">${esc((p.role||'').slice(0,25))}</span><span style="font-size:11px;color:${isMem?'var(--green)':'var(--text-dim)'}">${isMem?'✓':'+'}</span></div>`;
+  });
+  h += '</div></div>';
+  h += `<div class="detail-section"><button class="btn" style="color:var(--rose);width:100%" onclick="if(confirm('Delete #${esc(ch.name)}?'))deleteChannel('${ch.id}')">Delete Channel</button></div>`;
+  h += '</div>';
+  body.innerHTML = h;
+}
+
+/* ── Channel CRUD ── */
+function updChannel(id, key, val) {
+  const ch = findChannel(id); if (!ch) return;
+  ch[key] = val;
+  renderChannelsNav(); renderChannelCanvas(); autoSave();
+}
+
+function togChannelMember(chId, memberId) {
+  const ch = findChannel(chId); if (!ch) return;
+  const idx = ch.members.indexOf(memberId);
+  if (idx >= 0) ch.members.splice(idx, 1); else ch.members.push(memberId);
+  renderChannelDetails(); renderChannelCanvas(); autoSave();
+}
+
+function deleteChannel(id) {
+  if (chNotifyTimers[id]) { clearTimeout(chNotifyTimers[id]); delete chNotifyTimers[id]; }
+  if (wsConnected) {
+    sendReq('company.channels.delete', { channelId: id }).catch(() => {});
+  }
+  state.channels = state.channels.filter(c => c.id !== id);
+  if (state.selectedChannelId === id) state.selectedChannelId = null;
+  renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); autoSave();
+}
+
+function showCreateChannelModal() {
+  document.getElementById('createChannelModal').classList.remove('hidden');
+  document.getElementById('newChName').value = '';
+  document.getElementById('newChDesc').value = '';
+  document.getElementById('chError').style.display = 'none';
+  let h = `<button class="chip active" data-member="human" onclick="this.classList.toggle('active')">You (Human)</button>`;
+  state.positions.forEach(p => { h += `<button class="chip" data-member="${p.id}" onclick="this.classList.toggle('active')">${esc(p.title)}</button>`; });
+  document.getElementById('newChMembers').innerHTML = h;
+}
+
+function hideCreateChannelModal() { document.getElementById('createChannelModal').classList.add('hidden'); }
+
+function doCreateChannel() {
+  const name = document.getElementById('newChName').value.trim();
+  const desc = document.getElementById('newChDesc').value.trim();
+  const err = document.getElementById('chError');
+  if (!name) { err.textContent = 'Name is required'; err.style.display = 'block'; return; }
+  const members = [...document.querySelectorAll('#newChMembers .chip.active')].map(c => c.dataset.member);
+  if (wsConnected) {
+    sendReq('company.channels.create', {
+      name,
+      description: desc,
+      type: 'group',
+      createdBy: 'investor',
+      members,
+    }).then(result => {
+      if (result && result.channel) {
+        const ch = result.channel;
+        state.channels.push({ ...ch, messages: [], members: ch.members ? ch.members.map(m => m.memberId || m) : members });
+        state.selectedChannelId = ch.id;
+        autoSave();
+        hideCreateChannelModal();
+        if (state.view === 'channels') { renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); } else { setView('channels'); }
+      }
+    }).catch(e => {
+      err.textContent = e.message; err.style.display = 'block';
+    });
+  } else {
+    const ch = { id: 'ch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, description: desc, type: 'group', createdBy: 'investor', createdAt: Date.now(), members, messages: [], maxTurns: DEFAULT_MAX_TURNS };
+    state.channels.push(ch);
+    state.selectedChannelId = ch.id;
+    autoSave();
+    hideCreateChannelModal();
+    if (state.view === 'channels') { renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); } else { setView('channels'); }
+  }
+}
+
+function persistChannelsToFile() {
+  // Gateway handles channel persistence via SQLite — no file sync needed
+}
+
+/* ── Transcript ── */
+function buildChannelTranscript(ch, max) {
+  return ch.messages.slice(-(max || 40)).map(m => {
+    if (m.senderId === 'system') return '';
+    const who = m.senderId === 'human' ? 'Human Director' : (findPos(m.senderId)?.title || m.senderId);
+    return `${who}: ${m.text}`;
+  }).filter(Boolean).join('\n');
+}
+
+/* ── Agent prompt (task-execution oriented) ── */
+function buildAgentPrompt(ch, pos, transcript, memberList, latestMsg) {
+  const mentioned = latestMsg ? checkMentioned(latestMsg.text, pos.id) : false;
+  const tools = (pos.tools || []).join(', ');
+  let p = `[GROUP CHANNEL: #${ch.name}]\n[Members: ${memberList}]\n`;
+  if (ch.description) p += `[Topic: ${ch.description}]\n`;
+  p += `[Your role: ${pos.title} — ${pos.role || 'agent'}]\n`;
+  if (tools) p += `[Your tools: ${tools}]\n`;
+  p += `\n--- Conversation ---\n${transcript}\n---\n\n`;
+  p += `You are ${pos.title} in this group channel. All members see every message.\n`;
+  if (mentioned) p += `You were directly mentioned — address what was asked of you.\n`;
+  else p += `A new message appeared. Decide whether you should contribute based on your role.\n`;
+  p += `\nRULES:\n`;
+  p += `- When asked to do something, USE YOUR TOOLS and do it. Don't just discuss — execute.\n`;
+  p += `- Report what you accomplished, with specifics.\n`;
+  p += `- When producing a deliverable, write it to your workspace files and post updates to relevant channels.\n`;
+  p += `- If you have nothing meaningful to add right now, reply with exactly: PASS\n`;
+  return p;
+}
+
+/* ── Round management ── */
+function startChannelRound(chId) {
+  const ch = findChannel(chId);
+  if (!ch) return;
+  ch._round = { active: true, turnCount: 0, maxTurns: ch.maxTurns || DEFAULT_MAX_TURNS, pending: new Set(), passed: new Set() };
+  notifyChannelAgents(chId, ch.members.filter(m => m !== 'human'));
+}
+
+function endChannelRound(chId) {
+  const ch = findChannel(chId);
+  if (!ch || !ch._round) return;
+  ch._round.active = false;
+  if (chNotifyTimers[chId]) { clearTimeout(chNotifyTimers[chId]); delete chNotifyTimers[chId]; }
+  if (state.view === 'channels') {
+    if (state.selectedChannelId === chId) renderChannelCanvas();
+    renderChannelsNav();
+  }
+}
+
+function stopChannelRound(chId) {
+  const ch = findChannel(chId);
+  if (ch) {
+    ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: 'Round stopped.', timestamp: Date.now() });
+    autoSave();
+  }
+  endChannelRound(chId);
+}
+
+/* ── Notify agents ── */
+function notifyChannelAgents(chId, agentIds) {
+  const ch = findChannel(chId);
+  if (!ch || !ch._round || !ch._round.active || !wsConnected) return;
+  const transcript = buildChannelTranscript(ch);
+  const memberList = ch.members.map(m => m === 'human' ? 'Human Director' : (findPos(m)?.title || m)).join(', ');
+  const latestMsg = ch.messages.filter(m => m.senderId !== 'system').slice(-1)[0];
+  for (const mid of agentIds) {
+    if (ch._round.pending.has(mid)) continue;
+    const pos = findPos(mid);
+    if (!pos) continue;
+    ch._round.pending.add(mid);
+    const aid = state.deployedIds.includes(mid) ? mid : 'main';
+    const sk = `agent:${aid}:webchat:channel:${chId}`;
+    const prompt = buildAgentPrompt(ch, pos, transcript, memberList, latestMsg);
+    sendReq('chat.send', { sessionKey: sk, message: prompt, idempotencyKey: 'ch_'+Date.now()+'_'+mid+'_'+Math.random().toString(36).slice(2,5) }).catch(e => {
+      if (ch._round) ch._round.pending.delete(mid);
+      ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: `Failed to reach ${pos.title}: ${e.message}`, timestamp: Date.now() });
+      if (state.view === 'channels' && state.selectedChannelId === chId) renderChannelCanvas();
+    });
+  }
+}
+
+function scheduleChannelNotify(chId) {
+  if (chNotifyTimers[chId]) clearTimeout(chNotifyTimers[chId]);
+  chNotifyTimers[chId] = setTimeout(() => {
+    delete chNotifyTimers[chId];
+    const ch = findChannel(chId);
+    if (!ch || !ch._round || !ch._round.active) return;
+    const toNotify = ch.members.filter(m =>
+      m !== 'human' && !ch._round.pending.has(m) && !ch._round.passed.has(m)
+    );
+    const latestMsg = ch.messages.filter(m => m.senderId !== 'system').slice(-1)[0];
+    if (latestMsg) {
+      ch.members.forEach(m => {
+        if (m !== 'human' && checkMentioned(latestMsg.text, m) && !ch._round.pending.has(m) && !toNotify.includes(m)) {
+          ch._round.passed.delete(m);
+          toNotify.push(m);
+        }
+      });
+    }
+    if (toNotify.length) notifyChannelAgents(chId, toNotify);
+    else if (ch._round.pending.size === 0) endChannelRound(chId);
+  }, 2000);
+}
+
+/* ── Send message ── */
+function sendChannelMsg(chId) {
+  const ch = findChannel(chId); if (!ch) return;
+  const inp = document.getElementById('channelInput');
+  const text = inp?.value?.trim(); if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  hideMentionDropdown();
+  if (!wsConnected) {
+    ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: 'Not connected — agents won\'t see this.', timestamp: Date.now() });
+    renderChannelCanvas();
+    return;
+  }
+  sendReq('company.channels.post', {
+    channelId: ch.id,
+    senderId: 'investor',
+    text: text,
+  }).then(result => {
+    if (result && result.message) {
+      if (ch.messages.some(m => m.id === result.message.id)) return;
+      ch.messages.push({
+        id: result.message.id,
+        senderId: 'investor',
+        text: text,
+        timestamp: result.message.timestamp || Date.now(),
+      });
+      renderChannelCanvas(); autoSave();
+    }
+  }).catch(e => {
+    ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: 'Send failed: ' + e.message, timestamp: Date.now() });
+    renderChannelCanvas();
+  });
+}
+
+/* ── Handle agent response ── */
+function handleChannelResponse(agentId, channelId, evState, message, runId) {
+  if (evState !== 'final') return;
+  const ch = findChannel(channelId); if (!ch) return;
+  let text = extractText(message.content);
+  if (!ch._round) ch._round = { active: false, turnCount: 0, maxTurns: ch.maxTurns || DEFAULT_MAX_TURNS, pending: new Set(), passed: new Set() };
+  ch._round.pending.delete(agentId);
+  const isPass = text.trim().toUpperCase() === 'PASS';
+  if (isPass) {
+    ch._round.passed.add(agentId);
+  } else {
+    ch.messages.push({ id: 'm_'+Date.now(), senderId: agentId, text, timestamp: Date.now() });
+    ch._round.turnCount++;
+    autoSave();
+    if (ch._round.active && ch._round.turnCount < ch._round.maxTurns) {
+      scheduleChannelNotify(channelId);
+    } else if (ch._round.turnCount >= ch._round.maxTurns) {
+      ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: `Turn limit reached (${ch._round.maxTurns}). Send another message to continue.`, timestamp: Date.now() });
+      autoSave();
+      endChannelRound(channelId);
+    }
+  }
+  if (ch._round.pending.size === 0 && !chNotifyTimers[channelId]) {
+    endChannelRound(channelId);
+  }
+  if (state.view === 'channels' && state.selectedChannelId === channelId) renderChannelCanvas();
+}
+
+/* ═══════════════════════════════════════
+   PANEL
+   ═══════════════════════════════════════ */
+function renderPanel() {
+  const body = document.getElementById('panelBody');
+  const pos = findPos(state.selectedId);
+  if (!pos) { body.innerHTML = '<div class="no-selection"><p>Select a position to get started.</p></div>'; return; }
+  const t = state.activeTab;
+  if (t === 'details') renderDetails(pos, body);
+}
+
+function renderDetails(pos, el) {
+  const isCeo = pos.id === 'main';
+  const cache = agentFileCache[pos.id];
+  const isLoading = cache?.loading;
+  const files = cache?.files || {};
+
+  const FILE_SECTIONS = [
+    { key: 'IDENTITY.md', label: 'Identity', icon: '\uD83D\uDC64' },
+    { key: 'SOUL.md', label: 'Soul / Persona', icon: '\uD83E\uDDEC' },
+    { key: 'AGENTS.md', label: 'Operating Manual', icon: '\uD83D\uDCD6' },
+    { key: 'MEMORY.md', label: 'Memory', icon: '\uD83E\uDDE0' },
+    { key: 'HEARTBEAT.md', label: 'Heartbeat / Work Loop', icon: '\uD83D\uDC93' },
+    { key: 'TOOLS.md', label: 'Tools & Capabilities', icon: '\uD83D\uDD27' },
+  ];
+  if (isCeo) FILE_SECTIONS.push({ key: 'RECRUITMENT.md', label: 'Recruitment Plan', icon: '\uD83D\uDCCB' });
+
+  let h = '<div class="panel-scroll">';
+
+  h += `<div class="agent-header-card">
+    <div class="agent-avatar">${isCeo ? '\uD83D\uDC54' : '\uD83E\uDD16'}</div>
+    <div class="agent-header-info">
+      <div class="agent-header-title">${esc(pos.title)}</div>
+      <div class="agent-header-id">${esc(pos.id)}</div>
+      ${pos.role ? `<div class="agent-header-role">${esc(pos.role).substring(0,120)}</div>` : ''}
+    </div>
+    <button class="refresh-btn" onclick="fetchAgentFiles('${pos.id}')">
+      ${isLoading ? '<span class="spinner" style="display:inline-block;width:12px;height:12px;vertical-align:middle"></span> Loading' : '\u21BB Refresh'}
+    </button>
+  </div>`;
+
+  if (!cache && !isLoading) {
+    h += `<div class="agent-file-loading"><span class="spinner"></span> Loading agent files...</div>`;
+    setTimeout(() => fetchAgentFiles(pos.id), 50);
+  } else if (isLoading) {
+    h += `<div class="agent-file-loading"><span class="spinner"></span> Reading workspace files...</div>`;
+  } else {
+    FILE_SECTIONS.forEach(sec => {
+      const content = files[sec.key];
+      const expKey = pos.id + ':' + sec.key;
+      const defaultOpen = sec.key === 'IDENTITY.md' || sec.key === 'MEMORY.md';
+      const expanded = agentFileExpanded[expKey] !== undefined ? agentFileExpanded[expKey] : defaultOpen;
+      h += `<div class="agent-file-section">
+        <div class="agent-file-header" onclick="toggleFileSection('${pos.id}','${sec.key}')">
+          <span class="agent-file-arrow">${expanded ? '\u25BC' : '\u25B6'}</span>
+          <span class="agent-file-icon">${sec.icon}</span>
+          <span class="agent-file-label">${sec.label}</span>
+          <span class="agent-file-name">${sec.key}</span>
+        </div>
+        ${expanded ? `<div class="agent-file-content md-body">${content ? renderMarkdown(content) : '<span style="color:var(--text-dim);font-style:italic">File not found or empty</span>'}</div>` : ''}
+      </div>`;
+    });
+  }
+
+  if (!isCeo) {
+    h += `<div class="detail-section" style="margin-top:8px;border-top:1.5px solid var(--bg2);padding-top:16px">
+      <button class="btn" style="color:var(--rose);width:100%" onclick="if(confirm('Fire this agent?'))delPos('${pos.id}')">Fire Agent</button>
+    </div>`;
+  }
+
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+function renderTasks(pos, el) {
+  const tasks = pos.tasks||[], todo = tasks.filter(t=>t.status!=='done'), done = tasks.filter(t=>t.status==='done');
+  let h = '<div class="panel-scroll"><div class="task-list">';
+  if (!tasks.length) h += '<div class="file-empty">No tasks yet.</div>';
+  todo.forEach(t => { h += taskHtml(t, pos.id); });
+  if (done.length) {
+    h += `<div style="font-size:10px;color:var(--text-dim);margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.8px">Done (${done.length})</div>`;
+    done.forEach(t => { h += taskHtml(t, pos.id); });
+  }
+  h += '</div></div>';
+  h += `<div class="task-input-row"><input class="detail-input" id="newTask" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask('${pos.id}')"><button class="btn btn-accent btn-sm" onclick="addTask('${pos.id}')">Add</button></div>`;
+  el.innerHTML = h;
+}
+
+function taskHtml(t, pid) {
+  const d = t.status==='done';
+  return `<div class="task-item"><button class="task-check${d?' done':''}" onclick="togTask('${pid}','${t.id}')">${d?'✓':''}</button><div class="task-body"><div class="task-title${d?' done':''}">${esc(t.title)}</div><div class="task-meta">${t.priority||''}</div></div></div>`;
+}
+
+function renderFiles(pos, el) {
+  const wp = workspacePath(pos);
+  el.innerHTML = `<div class="panel-scroll" id="filePanel">
+    <div class="detail-section"><div class="detail-label">Workspace</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);margin-bottom:10px">${esc(wp)}</div>
+      <button class="btn btn-sm btn-accent" onclick="browseFiles('${esc(wp)}')">Browse Files</button>
+    </div>
+    <div id="fileListArea"><div class="file-empty">Connect to gateway to browse workspace files.</div></div>
+  </div>`;
+  if (wsConnected) browseFiles(wp);
+}
+
+
+/* ═══════════════════════════════════════
+   ACTIONS
+   ═══════════════════════════════════════ */
+function selectPosition(id) { state.selectedId = id; renderCanvas(); renderNavList(); renderPanel(); updTabs(); }
+function switchTab(t) { state.activeTab = t; document.querySelectorAll('.panel-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); renderPanel(); }
+function updTabs() { }
+function upd(id,k,v) { const p=findPos(id); if(!p) return; p[k]=v; renderCanvas(); renderNavList(); autoSave(); }
+function togTool(pid,tid) { const p=findPos(pid); if(!p) return; if(!p.tools) p.tools=[]; const i=p.tools.indexOf(tid); if(i>=0) p.tools.splice(i,1); else p.tools.push(tid); renderPanel(); renderCanvas(); autoSave(); }
+
+function addRootPosition() {
+  const ceo = state.positions.find(p => p.id === 'main');
+  if (ceo) {
+    const id = prompt('Agent ID (short, no spaces, e.g. "researcher"):', '');
+    if (!id || !id.trim()) return;
+    const cleanId = id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (state.positions.find(p => p.id === cleanId)) { alert('An agent with this ID already exists.'); return; }
+    const p = { id:cleanId, title:'New Agent', parentId:'main', layer:'operating', role:'', tools:['web','read','write'], access:'standard', human:'', sp:'', tasks:[] };
+    state.positions.push(p); state.selectedId = p.id; renderAll(); autoSave();
+    return;
+  }
+  const p = { id:genId(), title:'New Position', parentId:null, layer:'apex', role:'', tools:['web','read'], access:'full', human:'', sp:'', tasks:[] };
+  state.positions.push(p); state.selectedId = p.id; renderAll(); autoSave();
+}
+function addChildPosition(pid) {
+  const parent = findPos(pid);
+  const isCompanyMode = state.positions.some(p => p.id === 'main');
+  if (isCompanyMode) {
+    const id = prompt('Agent ID (short, no spaces, e.g. "researcher"):', '');
+    if (!id || !id.trim()) return;
+    const cleanId = id.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (state.positions.find(p => p.id === cleanId)) { alert('An agent with this ID already exists.'); return; }
+    const p = { id:cleanId, title:'New Agent', parentId:pid, layer:parent?.layer==='apex'?'middle':'operating', role:'', tools:['web','read','write'], access:'standard', human:'', sp:'', tasks:[] };
+    state.positions.push(p); state.selectedId = p.id; renderAll(); autoSave();
+    return;
+  }
+  const p = { id:genId(), title:'New Role', parentId:pid, layer:parent?.layer==='apex'?'middle':'operating', role:'', tools:['web','read'], access:'standard', human:'', sp:'', tasks:[] };
+  state.positions.push(p); state.selectedId = p.id; renderAll(); autoSave();
+}
+function delPos(id) {
+  const del = [id]; const gc = pid => childrenOf(pid).forEach(c => { del.push(c.id); gc(c.id); }); gc(id);
+  state.positions = state.positions.filter(p => !del.includes(p.id));
+  if (state.selectedId === id) state.selectedId = null;
+  renderAll(); autoSave();
+}
+function addTask(pid) { const inp=document.getElementById('newTask'); const t=inp?.value?.trim(); if(!t) return; const p=findPos(pid); if(!p) return; if(!p.tasks) p.tasks=[]; p.tasks.push({id:'t_'+Date.now(),title:t,status:'todo',priority:'medium',createdAt:Date.now()}); renderPanel(); updTabs(); renderCanvas(); renderNavList(); autoSave(); }
+function togTask(pid,tid) { const p=findPos(pid); if(!p) return; const t=(p.tasks||[]).find(x=>x.id===tid); if(!t) return; t.status = t.status==='done'?'todo':'done'; renderPanel(); updTabs(); renderCanvas(); renderNavList(); autoSave(); }
+
+function initCompany() {
+  if (state.positions.length && !confirm('This will reset the org to a fresh company with just the CEO. Continue?')) return;
+  const goal = prompt('What is the company goal?\n\n(e.g. "Build an AI-powered recipe recommendation platform")', '');
+  if (goal === null) return;
+  state.companyGoal = goal || '';
+  const p = {...CEO_TEMPLATE, tasks:[], systemPrompt:CEO_TEMPLATE.sp, workspace:'~/.openclaw/workspace'};
+  state.positions = [p];
+  state.selectedId = 'main'; renderAll(); autoSave();
+  toast('Company created — CEO is ready. Deploy to go live.', 'var(--accent)');
+}
+function loadTemplate() { initCompany(); }
+
+function renderAll() {
+  if (state.view === 'channels') { renderChannelsNav(); renderChannelCanvas(); renderChannelDetails(); }
+  else if (state.view === 'kb') { renderKbNav(); renderKbCanvas(); renderKbEditor(); }
+  else { renderCanvas(); renderNavList(); renderPanel(); updTabs(); }
+}
+
+/* ═══════════════════════════════════════
+   DEPLOY / PROVISION
+   ═══════════════════════════════════════ */
+function deployActions() {
+  const isCompanyMode = state.positions.some(p => p.id === 'main');
+  let h = '<button class="btn btn-sm" onclick="exportConfig()">Export</button>';
+  h += '<button class="btn btn-sm" onclick="saveToLocal()">Save</button>';
+  if (state.positions.length) {
+    if (state.deployed) {
+      h += '<button class="btn btn-sm btn-teardown" onclick="showTeardownConfirm()">Teardown</button>';
+      h += '<button class="btn btn-sm btn-ghost" onclick="syncDeployStatus()" title="Re-check deploy status">Sync</button>';
+    } else {
+      h += `<button class="btn btn-sm btn-deploy" onclick="showDeployModal()">${isCompanyMode ? 'Deploy Company' : 'Deploy Org'}</button>`;
+      h += '<button class="btn btn-sm btn-ghost" onclick="syncDeployStatus()" title="Already deployed via CLI? Click to sync.">Sync Status</button>';
+    }
+  }
+  return h;
+}
+
+function syncDeployStatus() {
+  if (!state.positions.length) return;
+  if (wsConnected) {
+    detectDeployedAgents();
+  } else {
+    markAllDeployed();
+  }
+}
+
+function markAllDeployed() {
+  state.deployed = true;
+  state.deployedIds = state.positions.map(p => p.id);
+  autoSave();
+  renderAll();
+  toast('Deploy status synced');
+}
+
+function toast(msg, color) {
+  const f = document.createElement('div');
+  f.textContent = msg;
+  f.style.cssText = `position:fixed;top:60px;right:20px;background:${color||'var(--green)'};color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;z-index:99;animation:fadeout 1.8s forwards`;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 2000);
+}
+
+async function detectDeployedAgents() {
+  if (!wsConnected) return;
+  try {
+    toast('Checking deploy status...', 'var(--accent)');
+    const agentsRes = await sendReq('agents.list', {});
+    const agentIds = (agentsRes?.agents || []).map(a => a.id).filter(Boolean);
+    if (agentIds.length) {
+      state.deployed = true;
+      state.deployedIds = agentIds;
+      autoSave();
+      renderAll();
+      toast(`${agentIds.length} deployed agents detected`);
+      loadAllAgentFilesViaRpc();
+    } else {
+      toast('No deployed agents found', 'var(--amber)');
+    }
+  } catch (e) {
+    markAllDeployed();
+  }
+}
+
+function exportManifest() {
+  const manifest = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    positions: state.positions.map(p => ({
+      id: p.id,
+      title: p.title,
+      layer: p.layer,
+      role: p.role || '',
+      parentId: p.parentId || null,
+      tools: p.tools || [],
+      access: p.access || 'standard',
+      human: p.human || '',
+      systemPrompt: p.systemPrompt || p.sp || '',
+      decisionRights: p.decisionRights || '',
+      workspace: `~/.openclaw/workspaces/${p.id}`,
+    })),
+    kb: state.kb || {},
+  };
+  return manifest;
+}
+
+function showDeployModal() {
+  if (!state.positions.length) return;
+  const modal = document.getElementById('deployModal');
+  const log = document.getElementById('deployLog');
+  const actions = document.getElementById('deployActions');
+  log.textContent = '';
+
+  const ceo = state.positions.find(p => p.id === 'main');
+  const hires = state.positions.filter(p => p.id !== 'main');
+  const isCompanyMode = !!ceo;
+
+  if (isCompanyMode) {
+    const goalText = state.companyGoal || 'No goal set — CEO will ask the investor';
+    actions.innerHTML = `<button class="btn" onclick="hideDeployModal()">Cancel</button><button class="btn btn-deploy" id="deployGoBtn" onclick="doDeploy()">Deploy Company</button>`;
+    log.textContent = `Company deployment:\n\n`;
+    log.textContent += `  Company Goal: ${goalText}\n\n`;
+    log.textContent += `  CEO (main agent) — Chief Agent Officer\n`;
+    log.textContent += `    Full access, autonomous operation\n\n`;
+    if (hires.length) {
+      log.textContent += `  Additional agents to hire (${hires.length}):\n`;
+      hires.forEach(p => {
+        log.textContent += `    ${p.title} (${p.id}) — ${p.role||'no role'}\n`;
+      });
+      log.textContent += '\n';
+    }
+    log.textContent += `This will:\n`;
+    log.textContent += `  1. Run create-company.mjs with the company goal\n`;
+    log.textContent += `  2. Create the Knowledge Base directory\n`;
+    log.textContent += `  3. Set up CEO workspace and identity\n`;
+    if (hires.length) log.textContent += `  4. Hire ${hires.length} additional agents\n`;
+    log.textContent += `\nAfter deployment, the CEO operates autonomously.\n`;
+    log.textContent += `You are the Investor — fund, observe, and post in #investor-relations.\n`;
+  } else {
+    actions.innerHTML = `<button class="btn" onclick="hideDeployModal()">Cancel</button><button class="btn btn-deploy" id="deployGoBtn" onclick="doDeploy()">Deploy ${state.positions.length} Agents</button>`;
+    log.textContent = `Manifest preview:\n\n`;
+    state.positions.forEach(p => {
+      const parent = p.parentId ? findPos(p.parentId) : null;
+      log.textContent += `  ${p.title} (${p.id})\n`;
+      log.textContent += `    Layer: ${LAYERS[p.layer]||p.layer}  Tools: ${(p.tools||[]).join(', ')}\n`;
+      if (parent) log.textContent += `    Reports to: ${parent.title}\n`;
+      log.textContent += `    Workspace: ~/.openclaw/workspaces/${p.id}\n\n`;
+    });
+    log.textContent += `\nReady to provision ${state.positions.length} agents.\n`;
+  }
+  modal.classList.remove('hidden');
+}
+
+function hideDeployModal() {
+  document.getElementById('deployModal').classList.add('hidden');
+}
+
+async function doDeploy() {
+  const log = document.getElementById('deployLog');
+  const goBtn = document.getElementById('deployGoBtn');
+  goBtn.disabled = true;
+  goBtn.textContent = 'Deploying...';
+
+  const ceo = state.positions.find(p => p.id === 'main');
+  const hires = state.positions.filter(p => p.id !== 'main');
+  const isCompanyMode = !!ceo;
+
+  if (wsConnected && isCompanyMode) {
+    const goal = state.companyGoal || 'Build a successful company';
+    const escapedGoal = goal.replace(/"/g, '\\"');
+
+    log.textContent += '\n── Step 1: Creating company ──\n';
+    log.textContent += `Goal: ${goal}\n`;
+    log.textContent += 'Running: openclaw company create ...\n\n';
+    try {
+      await sendReq('chat.send', {
+        sessionKey: 'agent:main:webchat:dm:deploy',
+        message: `Run this command and show the full output:\n\`\`\`\nopenclaw company create "${escapedGoal}"\n\`\`\``,
+        idempotencyKey: 'deploy_company_' + Date.now(),
+      });
+      log.textContent += '  Company creation initiated...\n';
+    } catch (e) {
+      log.textContent += `  ✗ Failed: ${e.message}\n`;
+    }
+
+    if (hires.length) {
+      log.textContent += `\n── Step 2: Hiring ${hires.length} agents ──\n`;
+      for (const pos of hires) {
+        const tools = (pos.tools || ['web','read','write']).join(',');
+        const layer = pos.layer || 'operating';
+        const title = (pos.title || 'Agent').replace(/"/g, '\\"');
+        const role = (pos.role || '').replace(/"/g, '\\"');
+        log.textContent += `  Hiring: ${pos.title} (${pos.id})...\n`;
+        try {
+          await sendReq('chat.send', {
+            sessionKey: 'agent:main:webchat:dm:deploy',
+            message: `Run this command and show the full output:\n\`\`\`\nopenclaw hire --id "${pos.id}" --title "${title}" --role "${role}" --tools "${tools}" --layer "${layer}"\n\`\`\``,
+            idempotencyKey: 'deploy_hire_' + pos.id + '_' + Date.now(),
+          });
+          log.textContent += `    ✓ ${pos.title} hired\n`;
+        } catch (e) {
+          log.textContent += `    ✗ Failed: ${e.message}\n`;
+        }
+      }
+    }
+
+    state.deployed = true;
+    state.deployedIds = state.positions.map(p => p.id);
+
+    log.textContent += '\n── Loading KB ──\n';
+    fetchKbFiles();
+    log.textContent += '  KB loaded.\n';
+
+    autoSave();
+
+    log.textContent += '\n── Gateway restart needed ──\n';
+    log.textContent += 'Run: openclaw gateway restart\n\n';
+    log.textContent += '✓ Company deployed!\n';
+    log.textContent += 'The CEO will autonomously initialize the KB, recruit team, and start operating.\n';
+    log.textContent += 'You are the Investor. Post in #investor-relations to talk to the CEO.\n';
+  } else if (wsConnected) {
+    const manifest = exportManifest();
+    const manifestJson = JSON.stringify(manifest, null, 2);
+    log.textContent += '\n── Step 1: Saving manifest ──\n';
+    log.textContent += 'Writing workstream-manifest.json via gateway...\n';
+    try {
+      await sendReq('chat.send', {
+        sessionKey: 'agent:main:webchat:dm:deploy',
+        message: `Write the following JSON to ~/.openclaw/workstream-manifest.json (overwrite if exists). Just write the file, nothing else:\n\n\`\`\`json\n${manifestJson}\n\`\`\``,
+        idempotencyKey: 'deploy_manifest_' + Date.now(),
+      });
+      log.textContent += '  ✓ Manifest saved\n';
+    } catch (e) {
+      log.textContent += `  ✗ Failed: ${e.message}\n`;
+    }
+
+    log.textContent += '\n── Step 2: Running provisioner ──\n';
+    log.textContent += 'Executing: openclaw company provision\n\n';
+    try {
+      await sendReq('chat.send', {
+        sessionKey: 'agent:main:webchat:dm:deploy',
+        message: 'Run this command and show the full output:\n```\nopenclaw company provision ~/.openclaw/workstream-manifest.json\n```',
+        idempotencyKey: 'deploy_run_' + Date.now(),
+      });
+      log.textContent += '  Provisioner started (check gateway logs for output)...\n';
+    } catch (e) {
+      log.textContent += `  ✗ Failed: ${e.message}\n`;
+    }
+
+    state.deployed = true;
+    state.deployedIds = state.positions.map(p => p.id);
+    autoSave();
+
+    log.textContent += '\n── Step 3: Gateway restart needed ──\n';
+    log.textContent += 'Run: openclaw gateway restart\n\n';
+    log.textContent += '✓ Deployment initiated!\n';
+    log.textContent += 'Agents will be live after gateway restart.\n';
+  } else {
+    // Not connected: show manual instructions
+    log.textContent += '\n── Not connected to gateway ──\n';
+    log.textContent += 'Run these commands manually:\n\n';
+    if (isCompanyMode) {
+      const goal = state.companyGoal || 'Build a successful company';
+      log.textContent += `  1. Create the company:\n`;
+      log.textContent += `     openclaw company create "${goal}"\n\n`;
+      if (hires.length) {
+        log.textContent += `  2. Hire additional agents:\n`;
+        hires.forEach(pos => {
+          const tools = (pos.tools || ['web','read','write']).join(',');
+          log.textContent += `     openclaw hire --id "${pos.id}" --title "${pos.title}" --role "${pos.role||''}" --tools "${tools}" --layer "${pos.layer||'operating'}"\n`;
+        });
+        log.textContent += '\n';
+      }
+      log.textContent += `  ${hires.length ? '3' : '2'}. Restart the gateway:\n`;
+      log.textContent += '     openclaw gateway restart\n\n';
+    } else {
+      const manifest = exportManifest();
+      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = u; a.download = 'workstream-manifest.json'; a.click();
+      URL.revokeObjectURL(u);
+      log.textContent += '  ✓ Manifest downloaded as workstream-manifest.json\n\n';
+      log.textContent += '  1. Move manifest to ~/.openclaw/:\n';
+      log.textContent += '     mv ~/Downloads/workstream-manifest.json ~/.openclaw/\n\n';
+      log.textContent += '  2. Run the provisioner:\n';
+      log.textContent += '     openclaw company provision\n\n';
+      log.textContent += '  3. Restart the gateway:\n';
+      log.textContent += '     openclaw gateway restart\n\n';
+    }
+
+    state.deployed = true;
+    state.deployedIds = state.positions.map(p => p.id);
+    autoSave();
+  }
+
+  document.getElementById('deployActions').innerHTML = '<button class="btn btn-accent" onclick="hideDeployModal()">Done</button>';
+  renderAll();
+}
+
+function showTeardownConfirm() {
+  if (!confirm('Teardown all deployed agents? This removes their workspaces and agent registrations.')) return;
+  doTeardown();
+}
+
+async function doTeardown() {
+  const isCompanyMode = state.positions.some(p => p.id === 'main');
+  if (wsConnected) {
+    try {
+      if (isCompanyMode) {
+        await sendReq('chat.send', {
+          sessionKey: 'agent:main:webchat:dm:deploy',
+          message: 'Run this command and show the full output:\n```\nopenclaw company create --teardown\n```',
+          idempotencyKey: 'teardown_' + Date.now(),
+        });
+      } else {
+        await sendReq('chat.send', {
+          sessionKey: 'agent:main:webchat:dm:deploy',
+          message: 'Run this command and show the full output:\n```\nopenclaw company provision --teardown ~/.openclaw/workstream-manifest.json\n```',
+          idempotencyKey: 'teardown_' + Date.now(),
+        });
+      }
+    } catch (e) { /* ignore */ }
+  }
+  state.deployed = false;
+  state.deployedIds = [];
+  autoSave();
+  renderAll();
+  const f = document.createElement('div');
+  f.textContent = 'Teardown initiated — restart gateway';
+  f.style.cssText = 'position:fixed;top:60px;right:20px;background:var(--rose);color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;z-index:99;animation:fadeout 2.5s forwards';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 2500);
+}
+
+/* ═══════════════════════════════════════
+   GATEWAY
+   ═══════════════════════════════════════ */
+function showConnectModal() { document.getElementById('connectModal').classList.remove('hidden'); const s=loadGw(); document.getElementById('gwUrl').value=s.url; document.getElementById('gwToken').value=s.token; }
+function hideConnectModal() { document.getElementById('connectModal').classList.add('hidden'); }
+function loadGw() { try { return { url:localStorage.getItem('ws_gw_url')||'ws://127.0.0.1:18789', token:localStorage.getItem('ws_gw_token')||'' }; } catch { return {url:'ws://127.0.0.1:18789',token:''}; } }
+function saveGw(u,t) { try { localStorage.setItem('ws_gw_url',u); localStorage.setItem('ws_gw_token',t); } catch{} }
+
+function sendReq(method, params) {
+  return new Promise((resolve, reject) => {
+    if (!ws||ws.readyState!==1) return reject(new Error('Not connected'));
+    const id='r'+(++reqCounter)+'_'+Date.now();
+    pendingReqs[id]={resolve,reject};
+    ws.send(JSON.stringify({type:'req',id,method,params:params||{}}));
+    setTimeout(()=>{ if(pendingReqs[id]){delete pendingReqs[id]; reject(new Error('Timeout'));} },30000);
+  });
+}
+
+let _gwCache = { url: '', token: '' };
+let _reconnectTimer = null;
+let _reconnectDelay = 1000;
+const _RECONNECT_MAX = 30000;
+let _manualDisconnect = false;
+
+function doConnect(optUrl, optToken) {
+  if (optUrl !== undefined && optToken !== undefined) {
+    _gwCache = { url: optUrl, token: optToken };
+  } else {
+    const domUrl = document.getElementById('gwUrl').value.trim();
+    const domToken = document.getElementById('gwToken').value.trim();
+    if (domUrl) _gwCache = { url: domUrl, token: domToken };
+    else { const gw = loadGw(); _gwCache = { url: gw.url, token: gw.token }; }
+  }
+  const { url, token } = _gwCache;
+  if (!url) return;
+  _manualDisconnect = false;
+  if (_reconnectTimer) { clearTimeout(_reconnectTimer); _reconnectTimer = null; }
+  const err=document.getElementById('gwError'); err.style.display='none';
+  if(ws) try{ws.close();}catch{}
+  ws = new WebSocket(token ? `${url}?token=${encodeURIComponent(token)}` : url);
+  ws.onopen = () => { saveGw(url, token); _reconnectDelay = 1000; };
+  ws.onmessage = ev => {
+    let msg; try{msg=JSON.parse(ev.data);}catch{return;}
+    if(msg.type==='res'&&msg.id&&pendingReqs[msg.id]) {
+      const {resolve,reject}=pendingReqs[msg.id]; delete pendingReqs[msg.id];
+      msg.ok ? resolve(msg.payload) : reject(new Error(msg.error?.message||'Failed')); return;
+    }
+    if(msg.type==='event'&&msg.event==='connect.challenge') {
+      sendReq('connect',{
+        minProtocol:3,maxProtocol:3,
+        client:{id:'webchat',version:'1.0.0',platform:'web',mode:'ui'},
+        role:'operator',scopes:['operator.admin'],
+        caps:[],commands:[],permissions:{},
+        auth:{token:token||undefined},
+        locale:navigator.language||'en-US',userAgent:'workstream-os/1.0.0'
+      }).then(()=>{
+        wsConnected=true; document.getElementById('statusDot').classList.add('connected');
+        hideConnectModal(); renderPanel(); renderAll();
+        loadAllAgentFilesViaRpc();
+        loadKbFilesViaFetch(); startKbAutoRefresh();
+        loadChannelsViaFetch();
+        if (state.positions.length && !state.deployed) setTimeout(() => detectDeployedAgents(), 1000);
+      }).catch(e=>{ err.textContent=e.message; err.style.display='block'; });
+      return;
+    }
+    if(msg.type==='event'&&msg.event==='chat') { handleChatEvent(msg.payload); return; }
+    if(msg.type==='event'&&msg.event==='company.channel.message') { handleCompanyChannelMessage(msg.payload); return; }
+    if(msg.type==='event'&&msg.event==='company.channel.created') { handleCompanyChannelCreated(msg.payload); return; }
+    if(msg.type==='event'&&msg.event==='company.channel.member.joined') { handleCompanyChannelMemberJoined(msg.payload); return; }
+  };
+  ws.onerror = ()=>{ err.textContent='Connection failed'; err.style.display='block'; };
+  ws.onclose = ()=>{
+    wsConnected=false; document.getElementById('statusDot').classList.remove('connected');
+    if (!_manualDisconnect && _gwCache.token) {
+      _reconnectTimer = setTimeout(() => { _reconnectTimer = null; doConnect(_gwCache.url, _gwCache.token); }, _reconnectDelay);
+      _reconnectDelay = Math.min(_reconnectDelay * 2, _RECONNECT_MAX);
+    }
+  };
+}
+
+/* ── Company Channel Event Handlers ── */
+function handleCompanyChannelMessage(payload) {
+  if (!payload || !payload.message) return;
+  const { message, channelId, channelName } = payload;
+  const ch = findChannel(channelId);
+  if (!ch) return;
+  // Avoid duplicates
+  if (ch.messages.some(m => m.id === message.id)) return;
+  ch.messages.push({
+    id: message.id,
+    senderId: message.senderId,
+    text: message.text,
+    timestamp: message.timestamp,
+    threadId: message.threadId || null,
+  });
+  autoSave();
+  if (state.view === 'channels') {
+    if (state.selectedChannelId === channelId) renderChannelCanvas();
+    renderChannelsNav();
+  }
+}
+
+function handleCompanyChannelCreated(payload) {
+  if (!payload || !payload.channel) return;
+  const ch = payload.channel;
+  if (!state.channels.find(c => c.id === ch.id)) {
+    state.channels.push({
+      ...ch,
+      messages: [],
+      members: ch.members ? ch.members.map(m => m.memberId || m) : [],
+    });
+    autoSave();
+    if (state.view === 'channels') { renderChannelsNav(); }
+  }
+}
+
+function handleCompanyChannelMemberJoined(payload) {
+  if (!payload) return;
+  const ch = findChannel(payload.channelId);
+  if (ch && payload.memberId && !ch.members.includes(payload.memberId)) {
+    ch.members.push(payload.memberId);
+    autoSave();
+    if (state.view === 'channels' && state.selectedChannelId === payload.channelId) {
+      renderChannelDetails();
+    }
+  }
+}
+
+function handleChatEvent(payload) {
+  if(!payload) return;
+  const {state:evState, message, runId, sessionKey:sk} = payload;
+  if(!sk||!message||message.role!=='assistant') return;
+  const chMatch = sk.match(/^agent:([^:]+):webchat:channel:(.+)$/);
+  if (chMatch) { handleChannelResponse(chMatch[1], chMatch[2], evState, message, runId); return; }
+
+  // Non-channel session events (deploy commands, file browser, etc.)
+  if(!chatStreams[sk]) chatStreams[sk]={messages:[],streaming:false};
+  const cs=chatStreams[sk];
+  let text=extractText(message.content);
+  const agentMatch = sk.match(/^agent:([^:]+):/);
+  const agentId = agentMatch ? agentMatch[1] : 'main';
+
+  if(evState==='delta') {
+    cs.streaming=true;
+    const ex=cs.messages.find(m=>m.runId===runId&&m.role==='assistant');
+    if(ex) ex.text=text; else cs.messages.push({role:'assistant',text,runId,agentId});
+  }
+  if(evState==='final') {
+    cs.streaming=false;
+    const ex=cs.messages.find(m=>m.runId===runId&&m.role==='assistant');
+    if(ex) ex.text=text; else cs.messages.push({role:'assistant',text,runId,agentId});
+  }
+  if(evState==='error'||evState==='abort') cs.streaming=false;
+}
+
+function extractText(c) { if(typeof c==='string') return c; if(Array.isArray(c)) return c.filter(b=>b.type==='text').map(b=>b.text).join('\n'); return ''; }
+
+function promptSaveAsPage(msgIdx, posId) {
+  const pos = findPos(posId);
+  if (!pos) return;
+  const sk = sessionKey(pos);
+  const msgs = chatStreams[sk]?.messages || [];
+  const m = msgs[msgIdx];
+  if (!m) return;
+  const title = prompt('Page title:', (m.text || '').split('\n')[0].replace(/^#+ /, '').slice(0, 60) || 'Chat response');
+  if (!title) return;
+  const agentId = m.agentId || pos.id;
+  const page = saveMessageAsPage(m.text, agentId, title);
+  if (page) {
+    toast(`Saved as page: ${title}`);
+    navigateToPage(page.id);
+  }
+}
+
+function promptSaveChannelMsgAsPage(msgId, chId) {
+  const ch = findChannel(chId);
+  if (!ch) return;
+  const m = ch.messages.find(x => x.id === msgId);
+  if (!m) return;
+  const title = prompt('Page title:', (m.text || '').split('\n')[0].replace(/^#+ /, '').slice(0, 60) || 'Channel message');
+  if (!title) return;
+  const page = saveMessageAsPage(m.text, m.senderId, title);
+  if (page) {
+    toast(`Saved as page: ${title}`);
+    navigateToPage(page.id);
+  }
+}
+
+
+/* ═══════════════════════════════════════
+   AGENT FILE INSPECTOR
+   ═══════════════════════════════════════ */
+async function loadAllAgentFilesViaRpc() {
+  if (!wsConnected) return;
+  try {
+    const agentsRes = await sendReq('agents.list', {});
+    const agentIds = (agentsRes?.agents || []).map(a => a.id).filter(Boolean);
+    for (const agentId of agentIds) {
+      const listRes = await sendReq('agents.files.list', { agentId });
+      const files = {};
+      for (const f of (listRes?.files || []).filter(f => !f.missing)) {
+        try {
+          const getRes = await sendReq('agents.files.get', { agentId, name: f.name });
+          if (getRes?.file && !getRes.file.missing) files[f.name] = getRes.file.content;
+        } catch {}
+      }
+      agentFileCache[agentId] = { loading: false, files, lastFetch: Date.now() };
+    }
+    syncPositionsFromAgents();
+  } catch (e) {
+    console.warn('loadAllAgentFilesViaRpc failed:', e);
+  }
+}
+
+async function loadSingleAgentFilesViaRpc(agentId) {
+  if (!wsConnected) { return; }
+  try {
+    const listRes = await sendReq('agents.files.list', { agentId });
+    const files = {};
+    for (const f of (listRes?.files || []).filter(f => !f.missing)) {
+      try {
+        const getRes = await sendReq('agents.files.get', { agentId, name: f.name });
+        if (getRes?.file && !getRes.file.missing) files[f.name] = getRes.file.content;
+      } catch {}
+    }
+    agentFileCache[agentId] = { loading: false, files, lastFetch: Date.now() };
+  } catch (e) {
+    agentFileCache[agentId] = { loading: false, files: {}, lastFetch: Date.now(), error: e.message };
+  }
+  const freshPos = findPos(agentId);
+  if (freshPos && state.selectedId === agentId && state.activeTab === 'details') {
+    renderDetails(freshPos, document.getElementById('panelBody'));
+  }
+}
+
+function fetchAgentFiles(posId) {
+  const pos = findPos(posId);
+  if (!pos) return;
+  agentFileCache[posId] = { loading: true, files: {}, lastFetch: 0 };
+  if (state.selectedId === posId && state.activeTab === 'details') {
+    renderDetails(pos, document.getElementById('panelBody'));
+  }
+  loadSingleAgentFilesViaRpc(posId);
+}
+
+function toggleFileSection(posId, fileKey) {
+  const expKey = posId + ':' + fileKey;
+  agentFileExpanded[expKey] = agentFileExpanded[expKey] === false ? true : false;
+  const pos = findPos(posId);
+  if (pos && state.activeTab === 'details') {
+    renderDetails(pos, document.getElementById('panelBody'));
+  }
+}
+
+/* ═══════════════════════════════════════
+   FILE BROWSER (via gateway exec)
+   ═══════════════════════════════════════ */
+async function browseFiles(dirPath) {
+  if(!wsConnected) return;
+  const area = document.getElementById('fileListArea');
+  if(!area) return;
+  area.innerHTML = '<div class="file-empty" style="color:var(--accent-light)">Loading...</div>';
+  try {
+    const res = await sendReq('chat.send', {
+      sessionKey: 'agent:main:webchat:dm:filebrowser',
+      message: `List the files in ${dirPath} — just output the filenames and sizes, one per line, nothing else. If the directory doesn't exist, say so.`,
+      idempotencyKey: 'fb_'+Date.now()
+    });
+    // The response will come via chat events — we wait a bit and read
+    setTimeout(async () => {
+      const msgs = chatStreams['agent:main:webchat:dm:filebrowser']?.messages || [];
+      const last = msgs[msgs.length - 1];
+      if (last && last.role === 'assistant') {
+        const lines = last.text.trim().split('\n').filter(l => l.trim());
+        if (lines.length === 0 || last.text.includes("doesn't exist") || last.text.includes('does not exist')) {
+          area.innerHTML = `<div class="file-empty">Workspace not created yet.<br><span style="font-size:11px">Files will appear here once the agent uses this workspace.</span></div>`;
+        } else {
+          area.innerHTML = '<div class="file-list">' + lines.map(l => {
+            const icon = l.includes('/') ? '📁' : '📄';
+            return `<div class="file-item"><span class="file-icon">${icon}</span><span class="file-name">${esc(l.trim())}</span></div>`;
+          }).join('') + '</div>';
+        }
+      } else {
+        area.innerHTML = '<div class="file-empty">No response yet. Try again.</div>';
+      }
+    }, 5000);
+  } catch(e) {
+    area.innerHTML = `<div class="file-empty">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   EXPORT
+   ═══════════════════════════════════════ */
+function exportConfig() {
+  const agents = state.positions.map(pos => {
+    const a = { id: pos.agentId||pos.id, name: pos.title, workspace: workspacePath(pos) };
+    if(pos.systemPrompt||pos.sp) a.systemPrompt = pos.systemPrompt||pos.sp;
+    if(pos.tools?.length) { a.tools={allow:[...pos.tools]}; if(pos.access==='elevated') a.tools.elevated={enabled:true}; }
+    if(!pos.parentId) a.default=true;
+    return a;
+  });
+  const cfg = { agents:{list:agents,defaults:{workspace:'~/.openclaw/workspace'}} };
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download='workstream-agents.json'; a.click(); URL.revokeObjectURL(u);
+}
+
+function exportAllKb() {
+  kbFileList.forEach(filename => {
+    const content = state.kb[filename];
+    if (content && content.trim()) {
+      const blob = new Blob([content], {type:'text/markdown'});
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = u; a.download = filename; a.click();
+      URL.revokeObjectURL(u);
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   PERSISTENCE
+   ═══════════════════════════════════════ */
+function autoSave() { try{localStorage.setItem('ws_state',JSON.stringify({positions:state.positions,kb:state.kb,kbFileList:kbFileList,deployed:state.deployed,deployedIds:state.deployedIds,channels:state.channels,companyGoal:state.companyGoal||''}));}catch{} }
+function saveToLocal() { autoSave(); const f=document.createElement('div'); f.textContent='Saved'; f.style.cssText='position:fixed;top:60px;right:20px;background:var(--green);color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;z-index:99;animation:fadeout 1.5s forwards'; document.body.appendChild(f); setTimeout(()=>f.remove(),1500); }
+function loadLocal() { try{ const r=localStorage.getItem('ws_state'); if(r){const s=JSON.parse(r); state.positions=s.positions||[]; state.kb=s.kb||{}; state.deployed=s.deployed||false; state.deployedIds=s.deployedIds||[]; state.channels=s.channels||[]; state.companyGoal=s.companyGoal||''; state.selectedId=null; state.selectedChannelId=null; state.activeTab='details'; if(s.kbFileList&&s.kbFileList.length){kbFileList=s.kbFileList;kbLoaded=true;}} }catch{} }
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+loadLocal();
+// Detect company reset — if reset-ts.js has a newer timestamp, wipe localStorage state
+if (window.__RESET_TS && window.__RESET_TS !== parseInt(localStorage.getItem('ws_reset_ts') || '0')) {
+  state.channels = [];
+  state.positions = []; state.deployed = false; state.deployedIds = [];
+  state.kb = {}; state.companyGoal = ''; state.selectedId = null;
+  kbFileList = []; kbLoaded = false;
+  Object.keys(agentFileCache).forEach(k => delete agentFileCache[k]);
+  localStorage.setItem('ws_reset_ts', String(window.__RESET_TS));
+  autoSave();
+}
+if (window.__RESET_TS) delete window.__RESET_TS;
+// Clear stale state from old workstream — only the CEO company model is supported now
+if (state.positions.length && !state.positions.find(p => p.id === 'main')) {
+  state.positions = []; state.deployed = false; state.deployedIds = []; state.channels = [];
+  state.kb = {}; state.companyGoal = ''; autoSave();
+}
+// One-time migration: clear leftover data from old agents
+if (!localStorage.getItem('ws_v2_migrated')) {
+  state.channels = []; state.kb = {};
+  state.deployed = false; state.deployedIds = [];
+  localStorage.setItem('ws_v2_migrated', '1'); autoSave();
+}
+// v3 migration: KB is now file-based — clear old localStorage KB and force re-fetch from disk
+if (!localStorage.getItem('ws_v3_kb_live')) {
+  state.kb = {}; kbFileList = []; kbLoaded = false;
+  localStorage.setItem('ws_v3_kb_live', '1'); autoSave();
+}
+// v6 migration: full company reset
+if (!localStorage.getItem('ws_v6_reset')) {
+  state.channels = []; state.kb = {};
+  state.positions = []; state.deployed = false; state.deployedIds = [];
+  state.selectedId = null; state.companyGoal = '';
+  kbFileList = []; kbLoaded = false;
+  Object.keys(agentFileCache).forEach(k => delete agentFileCache[k]);
+  localStorage.setItem('ws_v6_reset', '1'); autoSave();
+}
+renderAll();
+const gw=loadGw(); if(gw.token) { document.getElementById('gwUrl').value=gw.url; document.getElementById('gwToken').value=gw.token; doConnect(gw.url, gw.token); }
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleNavPanel(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === '.') { e.preventDefault(); toggleRightPanel(); }
+});
+</script>
+</body>
+</html>

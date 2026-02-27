@@ -71,6 +71,9 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "talk.config",
     "agents.files.list",
     "agents.files.get",
+    "company.channels.list",
+    "company.channels.get",
+    "company.channels.history",
   ],
   [WRITE_SCOPE]: [
     "send",
@@ -89,6 +92,9 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "chat.abort",
     "browser.request",
     "push.test",
+    "company.channels.post",
+    "company.channels.members.add",
+    "company.channels.members.remove",
   ],
   [ADMIN_SCOPE]: [
     "channels.logout",
@@ -112,6 +118,8 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "set-heartbeats",
     "system-event",
     "agents.files.set",
+    "company.channels.create",
+    "company.channels.delete",
   ],
 };
 

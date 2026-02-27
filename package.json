@@ -30,6 +30,7 @@
     "dist/",
     "docs/",
     "extensions/",
+    "scripts/workstream/",
     "skills/"
   ],
   "type": "module",

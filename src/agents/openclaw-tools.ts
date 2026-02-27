@@ -3,9 +3,13 @@ import { resolvePluginTools } from "../plugins/tools.js";
 import type { GatewayMessageChannel } from "../utils/message-channel.js";
 import { resolveSessionAgentId } from "./agent-scope.js";
 import type { SandboxFsBridge } from "./sandbox/fs-bridge.js";
+import { createAgentsCreateTool } from "./tools/agents-create-tool.js";
 import { createAgentsListTool } from "./tools/agents-list-tool.js";
 import { createBrowserTool } from "./tools/browser-tool.js";
 import { createCanvasTool } from "./tools/canvas-tool.js";
+import { createChannelManageTool } from "./tools/channel-manage-tool.js";
+import { createChannelPostTool } from "./tools/channel-post-tool.js";
+import { createChannelReadTool } from "./tools/channel-read-tool.js";
 import type { AnyAgentTool } from "./tools/common.js";
 import { createCronTool } from "./tools/cron-tool.js";
 import { createGatewayTool } from "./tools/gateway-tool.js";
@@ -128,6 +132,7 @@ export function createOpenClawTools(options?: {
       agentSessionKey: options?.agentSessionKey,
       requesterAgentIdOverride: options?.requesterAgentIdOverride,
     }),
+    createAgentsCreateTool(),
     createSessionsListTool({
       agentSessionKey: options?.agentSessionKey,
       sandboxed: options?.sandboxed,
@@ -159,6 +164,13 @@ export function createOpenClawTools(options?: {
     createSessionStatusTool({
       agentSessionKey: options?.agentSessionKey,
       config: options?.config,
+    }),
+    createChannelPostTool({
+      agentSessionKey: options?.agentSessionKey,
+    }),
+    createChannelReadTool(),
+    createChannelManageTool({
+      agentSessionKey: options?.agentSessionKey,
     }),
     ...(webSearchTool ? [webSearchTool] : []),
     ...(webFetchTool ? [webFetchTool] : []),
