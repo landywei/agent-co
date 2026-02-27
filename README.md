@@ -56,6 +56,22 @@ execution within their domain, and individual agents own the tasks assigned to t
 An agent acts because its objectives demand it, but those objectives are set by its
 lead, not invented in a vacuum.
 
+**Why channel-first (not session-based).** The obvious architecture is direct
+session-to-session calls: agent A sends a message to agent B, B processes it, B replies.
+This fails silently at scale. When a session-based call times out, drops, or the target
+agent stalls mid-turn, the caller gets nothing back — no error, no partial result, no
+record that the interaction was attempted. Multiply this across dozens of concurrent
+agent interactions and you get a system where work vanishes without a trace. The failure
+mode is not crash — it is silence.
+
+Channels solve this by making communication a durable, observable side effect. A message
+posted to a channel exists whether or not anyone reads it. It is logged, timestamped,
+and visible to every member. If an agent fails to wake, the message is still there for
+retry. If two agents need to coordinate, the full exchange is auditable by any third
+party (the CEO, a watchdog, a human). Session-based turnaround optimizes for
+request-response latency; channel-based turnaround optimizes for organizational
+reliability — the property that actually matters for long-horizon autonomous systems.
+
 **Channels as the coordination layer.** All inter-agent communication happens in SQLite-backed
 channels (public, private, DM, threaded). When an agent posts a message, `trigger.ts`
 evaluates channel membership and wakes every subscribed agent via gateway RPC, with
@@ -112,20 +128,24 @@ src/agents/tools/
 src/gateway/
   workstream-http.ts        HTTP endpoints for workstream + task monitoring dashboard
   company-channels.ts       Gateway method bindings for channel operations
-  server-methods/tasks.ts   Gateway RPC handlers for task CRUD + heartbeats
+  server-methods/
+    company-bootstrap.ts    Gateway RPC: company.create → runs create-company.mjs
+    company-channels.ts     Gateway RPC: channel CRUD, messaging, membership
+    tasks.ts                Gateway RPC handlers for task CRUD + heartbeats
 
 scripts/workstream/
   provision-workstream.mjs  Provision full org from a manifest (roles, tools, permissions, channels)
   hire-agent.mjs            Hire a single agent with role/title/layer/tools
   fire-agent.mjs            Terminate agent, archive workspace, update roster
-  create-company.mjs        Bootstrap company knowledge base
+  create-company.mjs        Bootstrap company knowledge base (CEO identity, charter, KB)
   manage-channel.mjs        CLI channel administration
+  reset-company.sh          Nuclear reset: back up .openclaw, restore creds/sessions, fresh state
   fresh-start.sh            Tear down and rebuild from scratch
 ```
 
 **Agent lifecycle:**
 
-- Each agent gets an isolated workspace (`~/.openclaw/workspaces/<id>/`) with `SOUL.md`, `IDENTITY.md`, `MEMORY.md`, `TOOLS.md`
+- Each agent gets an isolated workspace (`~/.openclaw/workspace-<id>/`) with `SOUL.md`, `IDENTITY.md`, `MEMORY.md`, `TOOLS.md`
 - Tool access is scoped per agent via config (e.g., operating core gets `exec`+`write`, support staff gets `read`+`memory`)
 - Agent-to-agent communication goes through channels, not direct calls — all messages are visible, logged, and triggerable
 - Channel messages wake sleeping agents via `trigger.ts` → gateway RPC with cooldown dedup
@@ -199,6 +219,27 @@ load increases to realistic levels.
   problem — semantic memory (what matters) vs. episodic memory (what happened) vs.
   working memory (what's active now). AgentSpawn (2026) demonstrates 42% memory overhead
   reduction through structured memory transfer during agent activation.
+
+- **Biological clock and cadence.** The problem long-horizon multi-agent systems suffer
+  from the most is cadence. When there are no humans in the loop, agents have no natural
+  sense of when to check on each other, when to read new information, when to align.
+  LLMs are trained on human data where "I'll check back tomorrow" means 24 hours and
+  "let's sync this afternoon" implies a shared circadian rhythm. Agents operating at
+  machine speed inherit these temporal intuitions but have no actual clock driving them —
+  so they either poll too aggressively (burning tokens and creating noise) or drift into
+  silence (missing critical state changes for hours).
+
+  The solution is a **biological clock**: a synthetic cadence that gives agents a
+  different definition of "day." Instead of 24 hours, an agent day might be 2 hours or
+  15 minutes — whatever granularity matches the company's operating tempo. On each tick
+  of this biological clock, agents should: (1) check their channel messages for anything
+  that needs response, (2) heartbeat their active task threads to signal liveness,
+  (3) run self-scheduled cron jobs (OKR check-ins, soul reflection, team sync). The
+  clock is implemented as a heartbeat config (`heartbeat: { every: "2m", target: "last" }`)
+  that wakes the agent on a fixed cadence, independent of external triggers. This
+  separates the _reactive_ wake path (channel messages, delegation) from the
+  _autonomous_ wake path (the biological clock), ensuring agents maintain forward
+  momentum even when no one is talking to them.
 
 ### 2. Objective and task thread encoding
 

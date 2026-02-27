@@ -246,7 +246,7 @@ Before reacting, reflect. After completing a milestone, pause. What did you lear
 
 ## Developing Your People's Souls
 
-Your employees are also becoming someone. Their SOUL.md files live at \`~/.openclaw/workspaces/<agent_id>/SOUL.md\`. Read them. Not to audit — to understand who your people are growing into.
+Your employees are also becoming someone. Their SOUL.md files live at \`~/.openclaw/workspace-<agent_id>/SOUL.md\`. Read them. Not to audit — to understand who your people are growing into.
 
 **When reviewing task results**, don't just evaluate the output. Reflect on what it reveals about the agent:
 - Did they show initiative or just follow instructions?
@@ -325,7 +325,7 @@ Don't ask permission. Just do it.
 ### Key Directories
 - \`~/.openclaw/company/\` — Company-wide files (charter, budget, roster)
 - \`~/.openclaw/company/kb/\` — Knowledge Base (grows as the company grows)
-- \`~/.openclaw/workspaces/\` — Employee workspaces (each agent gets one when hired)
+- \`~/.openclaw/workspace-<agent_id>/\` — Employee workspaces (each agent gets one when hired)
 - \`workspace/\` — YOUR workspace (this directory)
 
 ### The Knowledge Base
@@ -389,7 +389,7 @@ openclaw hire \\
 6. Log the decision
 
 ### After Hiring
-- The new agent's workspace is at \`workspaces/<agent_id>/\`
+- The new agent's workspace is at \`~/.openclaw/workspace-<agent_id>/\`
 - Communicate via \`sessions_send\` using their agent ID
 - They can read the company KB at \`~/.openclaw/company/kb/\`
 - They can propose KB updates
@@ -440,7 +440,7 @@ Everything runs at machine speed. Think in minutes and heartbeats, not days and 
 ### Every 2-3 Heartbeats
 - KB review (update stale files)
 - Team performance check
-- **Soul review:** Read employee SOUL.md files at \`~/.openclaw/workspaces/<id>/SOUL.md\`. Post developmental feedback in their channel.
+- **Soul review:** Read employee SOUL.md files at \`~/.openclaw/workspace-<id>/SOUL.md\`. Post developmental feedback in their channel.
 - Post investor update to \`#investor-relations\`
 - Budget review
 - Hire/fire decisions
@@ -529,11 +529,9 @@ _Update this as you grow into the role._
 }
 
 function generateCEOHeartbeat() {
-  const fs = require("fs"),
-    p = require("path");
-  const hbPath = p.join(require("os").homedir(), ".openclaw/workspace/HEARTBEAT.md");
-  if (fs.existsSync(hbPath)) {
-    return fs.readFileSync(hbPath, "utf8");
+  const hbPath = join(homedir(), ".openclaw/workspace/HEARTBEAT.md");
+  if (existsSync(hbPath)) {
+    return readFileSync(hbPath, "utf8");
   }
   return `# HEARTBEAT.md — CEO Work Loop
 
@@ -683,7 +681,7 @@ After hiring, send the new agent a message via \`sessions_send\` with:
 openclaw fire --id <agent_id> --reason "Clear reason"
 \`\`\`
 
-The agent's workspace gets archived to \`workspaces/.archive/\`, not deleted.
+The agent's workspace gets archived, not deleted.
 Update KB files 09, 10, and 21 after firing.
 `;
 }
@@ -694,13 +692,14 @@ function updateConfig() {
   console.log("  Updating openclaw.json...");
   const config = loadJson(CONFIG_PATH);
 
-  // Replace agents list with just CEO
+  // Replace agents list with just CEO, with heartbeat to auto-wake after restarts
   config.agents.list = [
     {
       id: "main",
       default: true,
       name: "CEO",
       workspace: WORKSPACE_DIR,
+      heartbeat: { every: "2m", target: "last" },
     },
   ];
 

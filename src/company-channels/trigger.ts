@@ -33,12 +33,49 @@ function pruneOldTriggers(): void {
 
 export function setupChannelTriggers(
   store: CompanyChannelStore,
-  _broadcast: GatewayBroadcastFn,
+  broadcast: GatewayBroadcastFn,
 ): void {
   const interval = setInterval(pruneOldTriggers, 30_000);
   interval.unref();
 
   store.on("event", (event) => {
+    // Broadcast all channel events to connected WebSocket clients so the
+    // frontend stays in sync regardless of whether the message was posted
+    // via the gateway RPC or the agent channel_post tool.
+    switch (event.type) {
+      case "channel.message":
+        broadcast("company.channel.message", {
+          message: event.message,
+          channelId: event.message.channelId,
+          channelName: event.channelName,
+        });
+        break;
+      case "channel.created":
+        broadcast("company.channel.created", {
+          channel: event.channel,
+          members: event.members,
+        });
+        break;
+      case "channel.member.joined":
+        broadcast("company.channel.member.joined", {
+          channelId: event.channelId,
+          memberId: event.memberId,
+        });
+        break;
+      case "channel.member.left":
+        broadcast("company.channel.member.left", {
+          channelId: event.channelId,
+          memberId: event.memberId,
+        });
+        break;
+      case "channel.deleted":
+        broadcast("company.channel.deleted", {
+          channelId: event.channelId,
+        });
+        break;
+    }
+
+    // Agent triggering only applies to messages
     if (event.type !== "channel.message") {
       return;
     }

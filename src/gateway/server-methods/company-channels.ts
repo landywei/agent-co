@@ -14,7 +14,7 @@ function readNumber(params: Record<string, unknown>, key: string): number | unde
 }
 
 export const companyChannelsHandlers: GatewayRequestHandlers = {
-  "company.channels.list": async ({ params, respond, context: _context }) => {
+  "company.channels.list": async ({ params, respond }) => {
     try {
       const store = getCompanyChannelStore();
       const memberId = readString(params, "memberId");
@@ -48,7 +48,7 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
     }
   },
 
-  "company.channels.create": async ({ params, respond, context }) => {
+  "company.channels.create": async ({ params, respond }) => {
     const name = readString(params, "name");
     if (!name) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "name is required"));
@@ -69,7 +69,6 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
     try {
       const store = getCompanyChannelStore();
       const channel = store.createChannel({ name, type, description, createdBy, members });
-      context.broadcast("company.channel.created", { channel });
       respond(true, { channel });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -85,7 +84,7 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
     }
   },
 
-  "company.channels.delete": async ({ params, respond, context }) => {
+  "company.channels.delete": async ({ params, respond }) => {
     const channelId = readString(params, "channelId") ?? readString(params, "channel");
     if (!channelId) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "channelId is required"));
@@ -94,16 +93,13 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
     try {
       const store = getCompanyChannelStore();
       const deleted = store.deleteChannel(channelId);
-      if (deleted) {
-        context.broadcast("company.channel.deleted", { channelId });
-      }
       respond(true, { deleted });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }
   },
 
-  "company.channels.post": async ({ params, respond, context }) => {
+  "company.channels.post": async ({ params, respond }) => {
     const channelId = readString(params, "channelId") ?? readString(params, "channel");
     if (!channelId) {
       respond(
@@ -141,11 +137,6 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
         text,
         threadId,
       });
-      context.broadcast("company.channel.message", {
-        message,
-        channelId: ch.id,
-        channelName: ch.name,
-      });
       respond(true, { message });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
@@ -179,7 +170,7 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
     }
   },
 
-  "company.channels.members.add": async ({ params, respond, context }) => {
+  "company.channels.members.add": async ({ params, respond }) => {
     const channelId = readString(params, "channelId") ?? readString(params, "channel");
     const memberId = readString(params, "memberId");
     if (!channelId || !memberId) {
@@ -203,16 +194,13 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
         return;
       }
       const added = store.addMember(ch.id, memberId, role);
-      if (added) {
-        context.broadcast("company.channel.member.joined", { channelId: ch.id, memberId });
-      }
       respond(true, { added, channelId: ch.id, memberId });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }
   },
 
-  "company.channels.members.remove": async ({ params, respond, context }) => {
+  "company.channels.members.remove": async ({ params, respond }) => {
     const channelId = readString(params, "channelId") ?? readString(params, "channel");
     const memberId = readString(params, "memberId");
     if (!channelId || !memberId) {
@@ -235,9 +223,6 @@ export const companyChannelsHandlers: GatewayRequestHandlers = {
         return;
       }
       const removed = store.removeMember(ch.id, memberId);
-      if (removed) {
-        context.broadcast("company.channel.member.left", { channelId: ch.id, memberId });
-      }
       respond(true, { removed, channelId: ch.id, memberId });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));

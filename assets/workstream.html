@@ -707,12 +707,7 @@ select.topbar-select {
 .mention-item:hover, .mention-item.active { background: var(--bg2); color: var(--lego-blue); }
 .mention-item .mi-icon { font-size: 15px; width: 22px; text-align: center; }
 .mention-item .mi-role { font-size: 11px; color: var(--text-dim); font-weight: 700; margin-left: auto; }
-.round-indicator {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800;
-  color: #B8920A; padding: 4px 12px; background: var(--amber-bg); border-radius: var(--radius);
-  border: 2px solid rgba(255,213,0,0.3);
-}
-.round-indicator .ri-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lego-yellow); animation: pulse 1.2s infinite; border: 1.5px solid #D4A800; }
+/* round indicator styles removed */
 
 /* ── Task Monitor ── */
 .task-stat {
@@ -1018,24 +1013,7 @@ function stopKbAutoRefresh() {
   if (kbRefreshTimer) { clearInterval(kbRefreshTimer); kbRefreshTimer = null; }
 }
 
-async function saveKbFile(key) {
-  if (!wsConnected) { toast('Connect to gateway first', 'var(--amber)'); return; }
-  const content = state.kb[key];
-  if (content === undefined) return;
-  const filePath = '~/.openclaw/' + key;
-  const cmd = `mkdir -p "$(dirname '${filePath}')" && cat > '${filePath}' << '__WSKBEOF__'\n${content}\n__WSKBEOF__`;
-  const sk = 'agent:main:webchat:dm:kb-writer';
-  try {
-    await sendReq('chat.send', {
-      sessionKey: sk,
-      message: 'Run this exact command silently. No commentary:\n```bash\n' + cmd + '\n```',
-      idempotencyKey: 'kb_write_' + key.replace(/\//g, '_') + '_' + Date.now()
-    });
-    toast('Saved ' + key.split('/').pop(), 'var(--lego-green)');
-  } catch (e) {
-    toast('Save failed: ' + e.message, 'var(--rose)');
-  }
-}
+/* KB is read-only in the frontend; CEO agent manages KB files */
 
 let ws = null, wsConnected = false, pendingReqs = {}, reqCounter = 0, chatStreams = {};
 const agentFileCache = {};
@@ -1066,6 +1044,11 @@ function parseIdentityMd(text) {
 }
 
 function syncPositionsFromAgents() {
+  // Don't auto-populate agents if the company hasn't been created yet.
+  // The gateway always reports "main" even with an empty config; skip it
+  // until the user explicitly creates the company via the frontend.
+  if (!state.positions.length && !state.companyGoal) return;
+
   let changed = false;
   const knownAgentIds = Object.keys(agentFileCache);
   // Add new agents
@@ -1256,7 +1239,6 @@ function renderPublicCanvas() {
     <div class="canvas-empty">
       <h2>Public Workspace</h2>
       <p>Shared files, reports, and notes visible to all roles. Stored at <code style="font-size:12px;color:var(--accent-light)">${PUBLIC_WORKSPACE}</code></p>
-      <button class="btn btn-accent" onclick="browseFiles('${PUBLIC_WORKSPACE}')">Browse Files</button>
     </div>`;
 }
 
@@ -1373,21 +1355,17 @@ function renderKbEditor() {
   const body = document.getElementById('panelBody');
   const filename = state.kbSelected;
   if (!filename || !kbFileList.includes(filename)) {
-    body.innerHTML = `<div class="no-selection"><p>Select a document to edit.</p></div>`;
+    body.innerHTML = `<div class="no-selection"><p>Select a document to view.</p></div>`;
     return;
   }
   const content = state.kb[filename] || '';
   const safeFilename = esc(filename);
   body.innerHTML = `<div class="kb-editor">
     <div class="kb-editor-header" style="padding:8px 12px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;font-weight:600;color:var(--text)">Edit</span>
       <code style="font-size:10px;color:var(--text-dim)">${safeFilename}</code>
-      <div style="flex:1"></div>
-      <button class="btn btn-sm btn-accent" style="font-size:11px;padding:3px 10px" onclick="saveKbFile('${safeFilename}')" ${wsConnected ? '' : 'disabled title="Connect to gateway"'}>Save</button>
     </div>
-    <div class="kb-editor-body" style="flex:1;overflow:hidden">
-      <textarea id="kbEditorText" spellcheck="false" style="width:100%;height:100%;resize:none;border:none;outline:none;padding:12px;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--bg1);color:var(--text)"
-        oninput="updateKbDoc('${safeFilename}', this.value)">${esc(content)}</textarea>
+    <div class="kb-editor-body" style="flex:1;overflow:auto;padding:12px">
+      <pre style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--text);margin:0">${esc(content)}</pre>
     </div>
   </div>`;
 }
@@ -1400,13 +1378,6 @@ function selectKbDoc(filename) {
 }
 
 let kbCanvasDebounce = null;
-function updateKbDoc(filename, content) {
-  state.kb[filename] = content;
-  autoSave();
-  renderKbNav();
-  clearTimeout(kbCanvasDebounce);
-  kbCanvasDebounce = setTimeout(() => renderKbCanvas(), 400);
-}
 
 function exportKbDoc(key) {
   const content = state.kb[key] || '';
@@ -1422,9 +1393,7 @@ function exportKbDoc(key) {
 /* ═══════════════════════════════════════
    CHANNELS
    ═══════════════════════════════════════ */
-let chNotifyTimers = {};
 let mentionState = { active: false, startIdx: -1, query: '', selectedIdx: 0, items: [] };
-const DEFAULT_MAX_TURNS = 10;
 
 function mergeFileChannels(fileChannels) {
   if (!Array.isArray(fileChannels)) return;
@@ -1531,10 +1500,9 @@ function renderChannelsNav() {
   state.channels.forEach(ch => {
     const active = ch.id === state.selectedChannelId ? ' active' : '';
     const msgCount = ch.messages.length;
-    const live = ch._round && ch._round.active;
     h += `<div class="nav-item${active}" onclick="selectChannel('${ch.id}')">
       <span class="item-icon" style="font-weight:700;color:var(--text-dim)">#</span>
-      <span class="item-label">${esc(ch.name)}${live ? ' <span class="ri-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1.2s infinite;vertical-align:middle;margin-left:4px"></span>' : ''}</span>
+      <span class="item-label">${esc(ch.name)}</span>
       ${msgCount ? `<span style="font-size:10px;color:var(--text-dim)">${msgCount}</span>` : ''}
     </div>`;
   });
@@ -1691,13 +1659,8 @@ function renderChannelCanvas() {
   const savedStart = prevInput?.selectionStart || 0;
   const savedEnd = prevInput?.selectionEnd || 0;
 
-  const roundActive = ch._round && ch._round.active;
   let h = '<div class="channel-canvas">';
   h += `<div class="channel-header"><div><h3># ${esc(ch.name)}</h3>${ch.description ? `<div class="ch-desc">${esc(ch.description)}</div>` : ''}</div><div style="flex:1"></div>`;
-  if (roundActive) {
-    h += `<span class="round-indicator"><span class="ri-dot"></span>${ch._round.turnCount}/${ch._round.maxTurns} turns</span>`;
-    h += `<button class="btn btn-sm" style="color:var(--rose);margin-left:6px" onclick="stopChannelRound('${ch.id}')">Stop</button>`;
-  }
   h += `<span style="font-size:12px;color:var(--text-dim);margin-left:8px">${ch.members.length} member${ch.members.length!==1?'s':''}</span></div>`;
   h += '<div class="channel-messages" id="channelMsgs">';
   if (!ch.messages.length) h += `<div class="ch-system-msg">This is the start of <strong>#${esc(ch.name)}</strong>. Say hello!</div>`;
@@ -1810,7 +1773,7 @@ function renderChannelDetails() {
   h += `<div class="detail-section"><div class="detail-label">Channel Name</div><input class="detail-input" value="${esc(ch.name)}" onchange="updChannel('${ch.id}','name',this.value)"></div>`;
   h += `<div class="detail-section"><div class="detail-label">Description</div><textarea class="detail-textarea" onchange="updChannel('${ch.id}','description',this.value)" placeholder="What's this channel for?">${esc(ch.description||'')}</textarea></div>`;
   h += `<div class="detail-section"><div class="detail-label">Created By</div><div style="font-size:13px;color:var(--text-secondary)">${ch.createdBy==='human'?'You':esc(findPos(ch.createdBy)?.title||ch.createdBy)}</div></div>`;
-  h += `<div class="detail-section"><div class="detail-label">Max Turns per Round</div><input class="detail-input" type="number" min="1" max="50" value="${ch.maxTurns||DEFAULT_MAX_TURNS}" onchange="updChannel('${ch.id}','maxTurns',parseInt(this.value)||DEFAULT_MAX_TURNS)" style="width:80px"><div style="font-size:10px;color:var(--text-dim);margin-top:4px">Safety limit — how many agent messages before a round auto-stops.</div></div>`;
+  /* round management removed — backend triggers handle agent orchestration */
   h += `<div class="detail-section"><div class="detail-label">Members (${ch.members.length})</div><div style="padding:4px 0">`;
   const humanIn = ch.members.includes('human');
   h += `<div class="ch-member-row" style="cursor:pointer" onclick="togChannelMember('${ch.id}','human')"><span class="ch-member-dot deployed"></span><span class="ch-member-name">You (Human)</span><span style="font-size:11px;color:${humanIn?'var(--green)':'var(--text-dim)'}">${humanIn?'✓ joined':'+ invite'}</span></div>`;
@@ -1840,7 +1803,6 @@ function togChannelMember(chId, memberId) {
 }
 
 function deleteChannel(id) {
-  if (chNotifyTimers[id]) { clearTimeout(chNotifyTimers[id]); delete chNotifyTimers[id]; }
   if (wsConnected) {
     sendReq('company.channels.delete', { channelId: id }).catch(() => {});
   }
@@ -1887,7 +1849,7 @@ function doCreateChannel() {
       err.textContent = e.message; err.style.display = 'block';
     });
   } else {
-    const ch = { id: 'ch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, description: desc, type: 'group', createdBy: 'investor', createdAt: Date.now(), members, messages: [], maxTurns: DEFAULT_MAX_TURNS };
+    const ch = { id: 'ch_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, description: desc, type: 'group', createdBy: 'investor', createdAt: Date.now(), members, messages: [] };
     state.channels.push(ch);
     state.selectedChannelId = ch.id;
     autoSave();
@@ -1900,108 +1862,8 @@ function persistChannelsToFile() {
   // Gateway handles channel persistence via SQLite — no file sync needed
 }
 
-/* ── Transcript ── */
-function buildChannelTranscript(ch, max) {
-  return ch.messages.slice(-(max || 40)).map(m => {
-    if (m.senderId === 'system') return '';
-    const who = m.senderId === 'human' ? 'Human Director' : (findPos(m.senderId)?.title || m.senderId);
-    return `${who}: ${m.text}`;
-  }).filter(Boolean).join('\n');
-}
-
-/* ── Agent prompt (task-execution oriented) ── */
-function buildAgentPrompt(ch, pos, transcript, memberList, latestMsg) {
-  const mentioned = latestMsg ? checkMentioned(latestMsg.text, pos.id) : false;
-  const tools = (pos.tools || []).join(', ');
-  let p = `[GROUP CHANNEL: #${ch.name}]\n[Members: ${memberList}]\n`;
-  if (ch.description) p += `[Topic: ${ch.description}]\n`;
-  p += `[Your role: ${pos.title} — ${pos.role || 'agent'}]\n`;
-  if (tools) p += `[Your tools: ${tools}]\n`;
-  p += `\n--- Conversation ---\n${transcript}\n---\n\n`;
-  p += `You are ${pos.title} in this group channel. All members see every message.\n`;
-  if (mentioned) p += `You were directly mentioned — address what was asked of you.\n`;
-  else p += `A new message appeared. Decide whether you should contribute based on your role.\n`;
-  p += `\nRULES:\n`;
-  p += `- When asked to do something, USE YOUR TOOLS and do it. Don't just discuss — execute.\n`;
-  p += `- Report what you accomplished, with specifics.\n`;
-  p += `- When producing a deliverable, write it to your workspace files and post updates to relevant channels.\n`;
-  p += `- If you have nothing meaningful to add right now, reply with exactly: PASS\n`;
-  return p;
-}
-
-/* ── Round management ── */
-function startChannelRound(chId) {
-  const ch = findChannel(chId);
-  if (!ch) return;
-  ch._round = { active: true, turnCount: 0, maxTurns: ch.maxTurns || DEFAULT_MAX_TURNS, pending: new Set(), passed: new Set() };
-  notifyChannelAgents(chId, ch.members.filter(m => m !== 'human'));
-}
-
-function endChannelRound(chId) {
-  const ch = findChannel(chId);
-  if (!ch || !ch._round) return;
-  ch._round.active = false;
-  if (chNotifyTimers[chId]) { clearTimeout(chNotifyTimers[chId]); delete chNotifyTimers[chId]; }
-  if (state.view === 'channels') {
-    if (state.selectedChannelId === chId) renderChannelCanvas();
-    renderChannelsNav();
-  }
-}
-
-function stopChannelRound(chId) {
-  const ch = findChannel(chId);
-  if (ch) {
-    ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: 'Round stopped.', timestamp: Date.now() });
-    autoSave();
-  }
-  endChannelRound(chId);
-}
-
-/* ── Notify agents ── */
-function notifyChannelAgents(chId, agentIds) {
-  const ch = findChannel(chId);
-  if (!ch || !ch._round || !ch._round.active || !wsConnected) return;
-  const transcript = buildChannelTranscript(ch);
-  const memberList = ch.members.map(m => m === 'human' ? 'Human Director' : (findPos(m)?.title || m)).join(', ');
-  const latestMsg = ch.messages.filter(m => m.senderId !== 'system').slice(-1)[0];
-  for (const mid of agentIds) {
-    if (ch._round.pending.has(mid)) continue;
-    const pos = findPos(mid);
-    if (!pos) continue;
-    ch._round.pending.add(mid);
-    const aid = state.deployedIds.includes(mid) ? mid : 'main';
-    const sk = `agent:${aid}:webchat:channel:${chId}`;
-    const prompt = buildAgentPrompt(ch, pos, transcript, memberList, latestMsg);
-    sendReq('chat.send', { sessionKey: sk, message: prompt, idempotencyKey: 'ch_'+Date.now()+'_'+mid+'_'+Math.random().toString(36).slice(2,5) }).catch(e => {
-      if (ch._round) ch._round.pending.delete(mid);
-      ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: `Failed to reach ${pos.title}: ${e.message}`, timestamp: Date.now() });
-      if (state.view === 'channels' && state.selectedChannelId === chId) renderChannelCanvas();
-    });
-  }
-}
-
-function scheduleChannelNotify(chId) {
-  if (chNotifyTimers[chId]) clearTimeout(chNotifyTimers[chId]);
-  chNotifyTimers[chId] = setTimeout(() => {
-    delete chNotifyTimers[chId];
-    const ch = findChannel(chId);
-    if (!ch || !ch._round || !ch._round.active) return;
-    const toNotify = ch.members.filter(m =>
-      m !== 'human' && !ch._round.pending.has(m) && !ch._round.passed.has(m)
-    );
-    const latestMsg = ch.messages.filter(m => m.senderId !== 'system').slice(-1)[0];
-    if (latestMsg) {
-      ch.members.forEach(m => {
-        if (m !== 'human' && checkMentioned(latestMsg.text, m) && !ch._round.pending.has(m) && !toNotify.includes(m)) {
-          ch._round.passed.delete(m);
-          toNotify.push(m);
-        }
-      });
-    }
-    if (toNotify.length) notifyChannelAgents(chId, toNotify);
-    else if (ch._round.pending.size === 0) endChannelRound(chId);
-  }, 2000);
-}
+/* Agent triggering is handled by the backend (setupChannelTriggers) when
+   any member posts via company.channels.post. No frontend chat.send needed. */
 
 /* ── Send message ── */
 function sendChannelMsg(chId) {
@@ -2036,30 +1898,17 @@ function sendChannelMsg(chId) {
   });
 }
 
-/* ── Handle agent response ── */
+/* Agent channel messages arrive via company.channel.message WebSocket events
+   (handled by handleCompanyChannelMessage). This legacy handler is kept as
+   a fallback for any chat-based channel responses still in flight. */
 function handleChannelResponse(agentId, channelId, evState, message, runId) {
   if (evState !== 'final') return;
   const ch = findChannel(channelId); if (!ch) return;
-  let text = extractText(message.content);
-  if (!ch._round) ch._round = { active: false, turnCount: 0, maxTurns: ch.maxTurns || DEFAULT_MAX_TURNS, pending: new Set(), passed: new Set() };
-  ch._round.pending.delete(agentId);
-  const isPass = text.trim().toUpperCase() === 'PASS';
-  if (isPass) {
-    ch._round.passed.add(agentId);
-  } else {
+  const text = extractText(message.content);
+  if (text.trim().toUpperCase() === 'PASS') return;
+  if (!ch.messages.some(m => m.senderId === agentId && m.text === text)) {
     ch.messages.push({ id: 'm_'+Date.now(), senderId: agentId, text, timestamp: Date.now() });
-    ch._round.turnCount++;
     autoSave();
-    if (ch._round.active && ch._round.turnCount < ch._round.maxTurns) {
-      scheduleChannelNotify(channelId);
-    } else if (ch._round.turnCount >= ch._round.maxTurns) {
-      ch.messages.push({ id: 'm_'+Date.now(), senderId: 'system', text: `Turn limit reached (${ch._round.maxTurns}). Send another message to continue.`, timestamp: Date.now() });
-      autoSave();
-      endChannelRound(channelId);
-    }
-  }
-  if (ch._round.pending.size === 0 && !chNotifyTimers[channelId]) {
-    endChannelRound(channelId);
   }
   if (state.view === 'channels' && state.selectedChannelId === channelId) renderChannelCanvas();
 }
@@ -2161,12 +2010,9 @@ function renderFiles(pos, el) {
   const wp = workspacePath(pos);
   el.innerHTML = `<div class="panel-scroll" id="filePanel">
     <div class="detail-section"><div class="detail-label">Workspace</div>
-      <div style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);margin-bottom:10px">${esc(wp)}</div>
-      <button class="btn btn-sm btn-accent" onclick="browseFiles('${esc(wp)}')">Browse Files</button>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text-secondary)">${esc(wp)}</div>
     </div>
-    <div id="fileListArea"><div class="file-empty">Connect to gateway to browse workspace files.</div></div>
   </div>`;
-  if (wsConnected) browseFiles(wp);
 }
 
 
@@ -2225,7 +2071,8 @@ function initCompany() {
   const p = {...CEO_TEMPLATE, tasks:[], systemPrompt:CEO_TEMPLATE.sp, workspace:'~/.openclaw/workspace'};
   state.positions = [p];
   state.selectedId = 'main'; renderAll(); autoSave();
-  toast('Company created — CEO is ready. Deploy to go live.', 'var(--accent)');
+  showDeployModal();
+  setTimeout(() => doDeploy(), 100);
 }
 function loadTemplate() { initCompany(); }
 
@@ -2244,7 +2091,6 @@ function deployActions() {
   h += '<button class="btn btn-sm" onclick="saveToLocal()">Save</button>';
   if (state.positions.length) {
     if (state.deployed) {
-      h += '<button class="btn btn-sm btn-teardown" onclick="showTeardownConfirm()">Teardown</button>';
       h += '<button class="btn btn-sm btn-ghost" onclick="syncDeployStatus()" title="Re-check deploy status">Sync</button>';
     } else {
       h += `<button class="btn btn-sm btn-deploy" onclick="showDeployModal()">${isCompanyMode ? 'Deploy Company' : 'Deploy Org'}</button>`;
@@ -2385,41 +2231,20 @@ async function doDeploy() {
 
   if (wsConnected && isCompanyMode) {
     const goal = state.companyGoal || 'Build a successful company';
-    const escapedGoal = goal.replace(/"/g, '\\"');
 
-    log.textContent += '\n── Step 1: Creating company ──\n';
-    log.textContent += `Goal: ${goal}\n`;
-    log.textContent += 'Running: openclaw company create ...\n\n';
+    log.textContent += '\n── Creating company ──\n';
+    log.textContent += `Goal: ${goal}\n\n`;
     try {
-      await sendReq('chat.send', {
-        sessionKey: 'agent:main:webchat:dm:deploy',
-        message: `Run this command and show the full output:\n\`\`\`\nopenclaw company create "${escapedGoal}"\n\`\`\``,
-        idempotencyKey: 'deploy_company_' + Date.now(),
-      });
-      log.textContent += '  Company creation initiated...\n';
+      const result = await sendReq('company.create', { goal });
+      if (result?.output) {
+        log.textContent += result.output + '\n';
+      }
+      log.textContent += '  ✓ Company created.\n';
     } catch (e) {
       log.textContent += `  ✗ Failed: ${e.message}\n`;
-    }
-
-    if (hires.length) {
-      log.textContent += `\n── Step 2: Hiring ${hires.length} agents ──\n`;
-      for (const pos of hires) {
-        const tools = (pos.tools || ['web','read','write']).join(',');
-        const layer = pos.layer || 'operating';
-        const title = (pos.title || 'Agent').replace(/"/g, '\\"');
-        const role = (pos.role || '').replace(/"/g, '\\"');
-        log.textContent += `  Hiring: ${pos.title} (${pos.id})...\n`;
-        try {
-          await sendReq('chat.send', {
-            sessionKey: 'agent:main:webchat:dm:deploy',
-            message: `Run this command and show the full output:\n\`\`\`\nopenclaw hire --id "${pos.id}" --title "${title}" --role "${role}" --tools "${tools}" --layer "${layer}"\n\`\`\``,
-            idempotencyKey: 'deploy_hire_' + pos.id + '_' + Date.now(),
-          });
-          log.textContent += `    ✓ ${pos.title} hired\n`;
-        } catch (e) {
-          log.textContent += `    ✗ Failed: ${e.message}\n`;
-        }
-      }
+      goBtn.disabled = false;
+      goBtn.textContent = 'Retry';
+      return;
     }
 
     state.deployed = true;
@@ -2430,82 +2255,29 @@ async function doDeploy() {
     log.textContent += '  KB loaded.\n';
 
     autoSave();
+    loadAllAgentFilesViaRpc();
 
-    log.textContent += '\n── Gateway restart needed ──\n';
-    log.textContent += 'Run: openclaw gateway restart\n\n';
-    log.textContent += '✓ Company deployed!\n';
-    log.textContent += 'The CEO will autonomously initialize the KB, recruit team, and start operating.\n';
+    log.textContent += '\n── Waking up CEO ──\n';
+    try {
+      await sendReq('chat.send', {
+        sessionKey: 'agent:main:webchat:dm:boot',
+        message: 'You just came online as CEO. Read your HEARTBEAT.md and start executing immediately.',
+        idempotencyKey: 'ceo_boot_' + Date.now(),
+      });
+      log.textContent += '  ✓ CEO is awake and working.\n';
+    } catch (e) {
+      log.textContent += `  ⚠ CEO wake-up failed: ${e.message} (the CEO will start on next heartbeat)\n`;
+    }
+
+    log.textContent += '\n✓ Company deployed!\n';
     log.textContent += 'You are the Investor. Post in #investor-relations to talk to the CEO.\n';
-  } else if (wsConnected) {
-    const manifest = exportManifest();
-    const manifestJson = JSON.stringify(manifest, null, 2);
-    log.textContent += '\n── Step 1: Saving manifest ──\n';
-    log.textContent += 'Writing workstream-manifest.json via gateway...\n';
-    try {
-      await sendReq('chat.send', {
-        sessionKey: 'agent:main:webchat:dm:deploy',
-        message: `Write the following JSON to ~/.openclaw/workstream-manifest.json (overwrite if exists). Just write the file, nothing else:\n\n\`\`\`json\n${manifestJson}\n\`\`\``,
-        idempotencyKey: 'deploy_manifest_' + Date.now(),
-      });
-      log.textContent += '  ✓ Manifest saved\n';
-    } catch (e) {
-      log.textContent += `  ✗ Failed: ${e.message}\n`;
-    }
-
-    log.textContent += '\n── Step 2: Running provisioner ──\n';
-    log.textContent += 'Executing: openclaw company provision\n\n';
-    try {
-      await sendReq('chat.send', {
-        sessionKey: 'agent:main:webchat:dm:deploy',
-        message: 'Run this command and show the full output:\n```\nopenclaw company provision ~/.openclaw/workstream-manifest.json\n```',
-        idempotencyKey: 'deploy_run_' + Date.now(),
-      });
-      log.textContent += '  Provisioner started (check gateway logs for output)...\n';
-    } catch (e) {
-      log.textContent += `  ✗ Failed: ${e.message}\n`;
-    }
-
-    state.deployed = true;
-    state.deployedIds = state.positions.map(p => p.id);
-    autoSave();
-
-    log.textContent += '\n── Step 3: Gateway restart needed ──\n';
-    log.textContent += 'Run: openclaw gateway restart\n\n';
-    log.textContent += '✓ Deployment initiated!\n';
-    log.textContent += 'Agents will be live after gateway restart.\n';
   } else {
-    // Not connected: show manual instructions
     log.textContent += '\n── Not connected to gateway ──\n';
     log.textContent += 'Run these commands manually:\n\n';
-    if (isCompanyMode) {
-      const goal = state.companyGoal || 'Build a successful company';
-      log.textContent += `  1. Create the company:\n`;
-      log.textContent += `     openclaw company create "${goal}"\n\n`;
-      if (hires.length) {
-        log.textContent += `  2. Hire additional agents:\n`;
-        hires.forEach(pos => {
-          const tools = (pos.tools || ['web','read','write']).join(',');
-          log.textContent += `     openclaw hire --id "${pos.id}" --title "${pos.title}" --role "${pos.role||''}" --tools "${tools}" --layer "${pos.layer||'operating'}"\n`;
-        });
-        log.textContent += '\n';
-      }
-      log.textContent += `  ${hires.length ? '3' : '2'}. Restart the gateway:\n`;
-      log.textContent += '     openclaw gateway restart\n\n';
-    } else {
-      const manifest = exportManifest();
-      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-      const u = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = u; a.download = 'workstream-manifest.json'; a.click();
-      URL.revokeObjectURL(u);
-      log.textContent += '  ✓ Manifest downloaded as workstream-manifest.json\n\n';
-      log.textContent += '  1. Move manifest to ~/.openclaw/:\n';
-      log.textContent += '     mv ~/Downloads/workstream-manifest.json ~/.openclaw/\n\n';
-      log.textContent += '  2. Run the provisioner:\n';
-      log.textContent += '     openclaw company provision\n\n';
-      log.textContent += '  3. Restart the gateway:\n';
-      log.textContent += '     openclaw gateway restart\n\n';
-    }
+    const goal = state.companyGoal || 'Build a successful company';
+    log.textContent += `  1. Create the company:\n`;
+    log.textContent += `     node scripts/workstream/create-company.mjs "${goal}"\n\n`;
+    log.textContent += `  2. Restart the gateway\n\n`;
 
     state.deployed = true;
     state.deployedIds = state.positions.map(p => p.id);
@@ -2516,30 +2288,8 @@ async function doDeploy() {
   renderAll();
 }
 
-function showTeardownConfirm() {
-  if (!confirm('Teardown all deployed agents? This removes their workspaces and agent registrations.')) return;
-  doTeardown();
-}
-
+/* teardown removed — use reset-company.sh for a full reset */
 async function doTeardown() {
-  const isCompanyMode = state.positions.some(p => p.id === 'main');
-  if (wsConnected) {
-    try {
-      if (isCompanyMode) {
-        await sendReq('chat.send', {
-          sessionKey: 'agent:main:webchat:dm:deploy',
-          message: 'Run this command and show the full output:\n```\nopenclaw company create --teardown\n```',
-          idempotencyKey: 'teardown_' + Date.now(),
-        });
-      } else {
-        await sendReq('chat.send', {
-          sessionKey: 'agent:main:webchat:dm:deploy',
-          message: 'Run this command and show the full output:\n```\nopenclaw company provision --teardown ~/.openclaw/workstream-manifest.json\n```',
-          idempotencyKey: 'teardown_' + Date.now(),
-        });
-      }
-    } catch (e) { /* ignore */ }
-  }
   state.deployed = false;
   state.deployedIds = [];
   autoSave();
@@ -2806,42 +2556,7 @@ function toggleFileSection(posId, fileKey) {
   }
 }
 
-/* ═══════════════════════════════════════
-   FILE BROWSER (via gateway exec)
-   ═══════════════════════════════════════ */
-async function browseFiles(dirPath) {
-  if(!wsConnected) return;
-  const area = document.getElementById('fileListArea');
-  if(!area) return;
-  area.innerHTML = '<div class="file-empty" style="color:var(--accent-light)">Loading...</div>';
-  try {
-    const res = await sendReq('chat.send', {
-      sessionKey: 'agent:main:webchat:dm:filebrowser',
-      message: `List the files in ${dirPath} — just output the filenames and sizes, one per line, nothing else. If the directory doesn't exist, say so.`,
-      idempotencyKey: 'fb_'+Date.now()
-    });
-    // The response will come via chat events — we wait a bit and read
-    setTimeout(async () => {
-      const msgs = chatStreams['agent:main:webchat:dm:filebrowser']?.messages || [];
-      const last = msgs[msgs.length - 1];
-      if (last && last.role === 'assistant') {
-        const lines = last.text.trim().split('\n').filter(l => l.trim());
-        if (lines.length === 0 || last.text.includes("doesn't exist") || last.text.includes('does not exist')) {
-          area.innerHTML = `<div class="file-empty">Workspace not created yet.<br><span style="font-size:11px">Files will appear here once the agent uses this workspace.</span></div>`;
-        } else {
-          area.innerHTML = '<div class="file-list">' + lines.map(l => {
-            const icon = l.includes('/') ? '📁' : '📄';
-            return `<div class="file-item"><span class="file-icon">${icon}</span><span class="file-name">${esc(l.trim())}</span></div>`;
-          }).join('') + '</div>';
-        }
-      } else {
-        area.innerHTML = '<div class="file-empty">No response yet. Try again.</div>';
-      }
-    }, 5000);
-  } catch(e) {
-    area.innerHTML = `<div class="file-empty">Error: ${esc(e.message)}</div>`;
-  }
-}
+/* file browser removed — workspace files are managed by agents */
 
 /* ═══════════════════════════════════════
    EXPORT

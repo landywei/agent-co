@@ -25,6 +25,8 @@
     "openrouter/moonshotai/kimi-k2.5": { "alias": "Kimi-K2.5" }
   },
   "tools.web.search.apiKey": "your-web-search-api-key",
+  "gateway.mode": "local",
   "gateway.auth.token": "your-gateway-auth-token",
-  "skills.okkslides.apiKey": "sk_live_your-okkslides-api-key"
+  "skills.entries.okkslides.apiKey": "sk_live_your-okkslides-api-key",
+  "agents.defaults.heartbeat.every": "2m"
 }

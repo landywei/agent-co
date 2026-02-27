@@ -11,6 +11,7 @@ import { agentsHandlers } from "./server-methods/agents.js";
 import { browserHandlers } from "./server-methods/browser.js";
 import { channelsHandlers } from "./server-methods/channels.js";
 import { chatHandlers } from "./server-methods/chat.js";
+import { companyBootstrapHandlers } from "./server-methods/company-bootstrap.js";
 import { companyChannelsHandlers } from "./server-methods/company-channels.js";
 import { configHandlers } from "./server-methods/config.js";
 import { connectHandlers } from "./server-methods/connect.js";
@@ -95,6 +96,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...agentHandlers,
   ...agentsHandlers,
   ...browserHandlers,
+  ...companyBootstrapHandlers,
   ...companyChannelsHandlers,
   ...taskHandlers,
 };
