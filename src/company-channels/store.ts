@@ -194,6 +194,9 @@ export class CompanyChannelStore extends EventEmitter<{
       const countRow = this.db
         .prepare(`SELECT COUNT(*) as cnt FROM channel_members WHERE channel_id = ?`)
         .get(ch.id) as { cnt: number };
+      const msgCountRow = this.db
+        .prepare(`SELECT COUNT(*) as cnt FROM channel_messages WHERE channel_id = ?`)
+        .get(ch.id) as { cnt: number };
 
       const lastMsgRow = this.db
         .prepare(
@@ -204,6 +207,7 @@ export class CompanyChannelStore extends EventEmitter<{
       return {
         ...ch,
         memberCount: countRow.cnt,
+        messageCount: msgCountRow.cnt,
         lastMessage: lastMsgRow ? mapMessageRow(lastMsgRow) : null,
       };
     });
@@ -224,6 +228,9 @@ export class CompanyChannelStore extends EventEmitter<{
       const countRow = this.db
         .prepare(`SELECT COUNT(*) as cnt FROM channel_members WHERE channel_id = ?`)
         .get(ch.id) as { cnt: number };
+      const msgCountRow = this.db
+        .prepare(`SELECT COUNT(*) as cnt FROM channel_messages WHERE channel_id = ?`)
+        .get(ch.id) as { cnt: number };
       const lastMsgRow = this.db
         .prepare(
           `SELECT * FROM channel_messages WHERE channel_id = ? ORDER BY timestamp DESC LIMIT 1`,
@@ -232,6 +239,7 @@ export class CompanyChannelStore extends EventEmitter<{
       return {
         ...ch,
         memberCount: countRow.cnt,
+        messageCount: msgCountRow.cnt,
         lastMessage: lastMsgRow ? mapMessageRow(lastMsgRow) : null,
       };
     });

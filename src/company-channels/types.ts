@@ -34,6 +34,7 @@ export interface CompanyChannelWithMembers extends CompanyChannel {
 
 export interface CompanyChannelPreview extends CompanyChannel {
   memberCount: number;
+  messageCount: number;
   lastMessage: ChannelMessage | null;
 }
 

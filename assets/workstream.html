@@ -624,6 +624,16 @@ select.topbar-select {
   align-self: center; font-size: 11px; color: var(--text-dim); font-weight: 700;
   background: transparent; padding: 8px; text-align: center;
 }
+.ch-load-more-wrap {
+  align-self: center; padding: 4px 0 8px;
+}
+.ch-load-more {
+  font-size: 11px; font-weight: 800; color: var(--text-dim); background: var(--bg2);
+  border: 2px solid var(--border); border-radius: 20px; padding: 5px 16px;
+  cursor: pointer; transition: all 0.15s; font-family: var(--font);
+}
+.ch-load-more:hover { background: var(--surface); border-color: var(--border-hover); color: var(--text-secondary); }
+.ch-load-more:disabled { opacity: 0.5; cursor: default; }
 .channel-canvas { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); width: 100%; }
 .channel-header { padding: 16px 24px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; background: var(--surface); }
 .channel-header h3 { font-size: 16px; font-weight: 900; margin: 0; }
@@ -1432,8 +1442,9 @@ async function loadChannelsViaFetch() {
           existing.description = ch.description;
           existing.type = ch.type;
           existing.memberCount = ch.memberCount;
+          existing.messageCount = ch.messageCount || existing.messageCount || 0;
         } else {
-          state.channels.push({ ...ch, messages: [], members: [], memberCount: ch.memberCount || 0 });
+          state.channels.push({ ...ch, messages: [], members: [], memberCount: ch.memberCount || 0, messageCount: ch.messageCount || 0 });
         }
       }
       // Load messages for each channel
@@ -1448,6 +1459,7 @@ async function loadChannelsViaFetch() {
               timestamp: m.timestamp,
               threadId: m.threadId || null,
             }));
+            ch.hasMoreMessages = hist.messages.length >= 50;
           }
         } catch {}
         // Load members
@@ -1491,6 +1503,36 @@ function selectChannel(id) {
   renderChannelDetails();
 }
 
+async function loadMoreChannelMessages(chId) {
+  const ch = findChannel(chId);
+  if (!ch || !ch.hasMoreMessages) return;
+  const btn = document.getElementById('chLoadMoreBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  const oldestTs = ch.messages.length ? ch.messages[0].timestamp : undefined;
+  try {
+    const hist = await sendReq('company.channels.history', { channelId: chId, limit: 50, ...(oldestTs ? { before: oldestTs } : {}) });
+    if (hist && Array.isArray(hist.messages) && hist.messages.length) {
+      const existingIds = new Set(ch.messages.map(m => m.id));
+      const older = hist.messages
+        .filter(m => !existingIds.has(m.id))
+        .map(m => ({ id: m.id, senderId: m.senderId, text: m.text, timestamp: m.timestamp, threadId: m.threadId || null }));
+      ch.messages = [...older, ...ch.messages];
+      ch.hasMoreMessages = hist.messages.length >= 50;
+    } else {
+      ch.hasMoreMessages = false;
+    }
+  } catch { ch.hasMoreMessages = false; }
+  // Re-render but preserve scroll position from the bottom
+  const box = document.getElementById('channelMsgs');
+  const prevScrollBottom = box ? box.scrollHeight - box.scrollTop : null;
+  renderChannelCanvas();
+  const newBox = document.getElementById('channelMsgs');
+  if (newBox && prevScrollBottom !== null) {
+    newBox.scrollTop = newBox.scrollHeight - prevScrollBottom;
+  }
+  autoSave();
+}
+
 function renderChannelsNav() {
   const list = document.getElementById('navList');
   let h = '';
@@ -1499,7 +1541,7 @@ function renderChannelsNav() {
   }
   state.channels.forEach(ch => {
     const active = ch.id === state.selectedChannelId ? ' active' : '';
-    const msgCount = ch.messages.length;
+    const msgCount = ch.messageCount || ch.messages.length;
     h += `<div class="nav-item${active}" onclick="selectChannel('${ch.id}')">
       <span class="item-icon" style="font-weight:700;color:var(--text-dim)">#</span>
       <span class="item-label">${esc(ch.name)}</span>
@@ -1663,7 +1705,11 @@ function renderChannelCanvas() {
   h += `<div class="channel-header"><div><h3># ${esc(ch.name)}</h3>${ch.description ? `<div class="ch-desc">${esc(ch.description)}</div>` : ''}</div><div style="flex:1"></div>`;
   h += `<span style="font-size:12px;color:var(--text-dim);margin-left:8px">${ch.members.length} member${ch.members.length!==1?'s':''}</span></div>`;
   h += '<div class="channel-messages" id="channelMsgs">';
-  if (!ch.messages.length) h += `<div class="ch-system-msg">This is the start of <strong>#${esc(ch.name)}</strong>. Say hello!</div>`;
+  if (ch.hasMoreMessages) {
+    h += `<div class="ch-load-more-wrap"><button class="ch-load-more" id="chLoadMoreBtn" onclick="loadMoreChannelMessages('${ch.id}')">↑ Load older messages</button></div>`;
+  } else if (!ch.messages.length) {
+    h += `<div class="ch-system-msg">This is the start of <strong>#${esc(ch.name)}</strong>. Say hello!</div>`;
+  }
   ch.messages.forEach(m => {
     if (m.senderId === 'system') { h += `<div class="ch-system-msg">${esc(m.text)}</div>`; return; }
     const isSelf = m.senderId === 'human' || m.senderId === 'investor';
@@ -1890,6 +1936,7 @@ function sendChannelMsg(chId) {
         text: text,
         timestamp: result.message.timestamp || Date.now(),
       });
+      ch.messageCount = (ch.messageCount || 0) + 1;
       renderChannelCanvas(); autoSave();
     }
   }).catch(e => {
@@ -1908,6 +1955,7 @@ function handleChannelResponse(agentId, channelId, evState, message, runId) {
   if (text.trim().toUpperCase() === 'PASS') return;
   if (!ch.messages.some(m => m.senderId === agentId && m.text === text)) {
     ch.messages.push({ id: 'm_'+Date.now(), senderId: agentId, text, timestamp: Date.now() });
+    ch.messageCount = (ch.messageCount || 0) + 1;
     autoSave();
   }
   if (state.view === 'channels' && state.selectedChannelId === channelId) renderChannelCanvas();
@@ -2397,6 +2445,7 @@ function handleCompanyChannelMessage(payload) {
     timestamp: message.timestamp,
     threadId: message.threadId || null,
   });
+  ch.messageCount = (ch.messageCount || 0) + 1;
   autoSave();
   if (state.view === 'channels') {
     if (state.selectedChannelId === channelId) renderChannelCanvas();
