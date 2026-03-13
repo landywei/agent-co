@@ -75,8 +75,8 @@ async function assertLocalMediaAllowed(
 
   // Hardening: the default allowlist includes the OpenClaw temp dir, and tests/CI may
   // override the state dir into tmp. Avoid accidentally allowing per-agent
-  // `workspace-*` state roots via the temp-root prefix match; require explicit
-  // localRoots for those.
+  // workspace-* or workspaces/ state roots via the temp-root prefix match; require
+  // explicit localRoots for those.
   if (localRoots === undefined) {
     const workspaceRoot = roots.find((root) => path.basename(root) === "workspace");
     if (workspaceRoot) {
@@ -84,7 +84,7 @@ async function assertLocalMediaAllowed(
       const rel = path.relative(stateDir, resolved);
       if (rel && !rel.startsWith("..") && !path.isAbsolute(rel)) {
         const firstSegment = rel.split(path.sep)[0] ?? "";
-        if (firstSegment.startsWith("workspace-")) {
+        if (firstSegment.startsWith("workspace-") || firstSegment === "workspaces") {
           throw new LocalMediaAccessError(
             "path-not-allowed",
             `Local media path is not under an allowed directory: ${mediaPath}`,

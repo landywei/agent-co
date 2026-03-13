@@ -373,6 +373,10 @@ drift — the feedback they receive must be structured, calibrated, and conseque
   agent vs. the researcher who found the lead vs. the engineer who built the demo?
   This is the multi-agent credit assignment problem, and it's unsolved.
 
+## Reference
+
+- **[LLM Call & System Prompt Inventory](docs/reference/LLM-INVENTORY.md)** — maps every LLM call trigger, every system prompt section, every tool definition, and flags redundancies/contradictions. Start here when auditing token spend or refining agent prompts.
+
 ## Upstream
 
 All base OpenClaw functionality is preserved. For gateway setup, messaging channels, model configuration, and CLI reference, see the [OpenClaw docs](https://docs.openclaw.ai).

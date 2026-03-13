@@ -24,7 +24,7 @@ const AgentsCreateToolSchema = Type.Object({
   }),
   workspace: Type.Optional(
     Type.String({
-      description: "Workspace directory path. Defaults to ~/.openclaw/workspace-{name}.",
+      description: "Workspace directory path. Defaults to ~/.openclaw/workspaces/{name}.",
     }),
   ),
 });
@@ -56,7 +56,7 @@ export function createAgentsCreateTool(): AnyAgentTool {
         }
 
         const workspaceDir = resolveUserPath(
-          workspaceParam?.trim() || `~/.openclaw/workspace-${agentId}`,
+          workspaceParam?.trim() || `~/.openclaw/workspaces/${agentId}`,
         );
 
         let nextConfig = applyAgentConfig(cfg, {
