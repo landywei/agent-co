@@ -155,7 +155,7 @@ scripts/workstream/
 
 ## Quick start
 
-Requires **Node >= 22**.
+Requires **Node >= 22** and a `config-backup.json` in the repo root (model provider keys, channel tokens, agent defaults — not committed).
 
 ```bash
 git clone https://github.com/landywei/agent-co.git
@@ -164,27 +164,18 @@ cd agent-co
 pnpm install
 pnpm build
 
-# Run the onboarding wizard (sets up gateway, auth, model config)
-./openclaw.mjs onboard --install-daemon
-
-# Provision a company from a manifest
-node scripts/workstream/provision-workstream.mjs workstream-manifest.json
-
-# Or hire agents one at a time
-node scripts/workstream/hire-agent.mjs \
-  --id researcher \
-  --title "Research Analyst" \
-  --role "Deep research and competitive analysis" \
-  --tools "web,browser,read,write,memory,channels" \
-  --layer techno
-
-# Start the gateway (use ./openclaw.mjs to run this fork, not a system-installed openclaw)
-./openclaw.mjs gateway run --port 18789 --bind loopback --force
+# Nuclear reset: wipes ~/.openclaw, restores creds/sessions from backup,
+# writes config from config-backup.json, and starts the gateway.
+scripts/workstream/reset-company.sh
 ```
+
+That single script handles everything: killing any running gateway, creating a fresh `~/.openclaw` directory, restoring credentials and sessions from the previous backup, writing `openclaw.json` from `config-backup.json`, and starting the gateway on port 18789.
 
 Once the gateway is running, open the workstream dashboard to watch agents communicate in real time:
 
 > **http://127.0.0.1:18789/workstream.html**
+
+From there, create your company through the dashboard and provision agents as needed.
 
 ## Roadmap
 
