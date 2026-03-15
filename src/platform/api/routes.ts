@@ -570,15 +570,22 @@ export function setupApiRoutes(app: Express, config: ApiRoutesConfig): void {
     },
   );
 
-  // Gateway proxy routes
+  // Gateway proxy routes - use regex for Express 5 compatibility
   app.all(
-    "/api/orgs/:orgId/gateway/*",
+    /^\/api\/orgs\/([^/]+)\/gateway(\/.*)?$/,
     requireAuth,
+    async (req: Request, res: Response, next) => {
+      const orgIdMatch = req.path.match(/^\/api\/orgs\/([^/]+)\/gateway/);
+      if (orgIdMatch) {
+        req.params.orgId = orgIdMatch[1];
+      }
+      next();
+    },
     requireOrgAccess(),
     async (req: Request, res: Response) => {
       try {
-        const originalUrl = req.url.replace(`/api/orgs/${req.orgId}/gateway`, "");
-        req.url = originalUrl || "/";
+        const gatewayPath = req.path.replace(/^\/api\/orgs\/[^/]+\/gateway/, "") || "/";
+        req.url = gatewayPath;
         await proxy.proxyRequest(req.orgId!, req, res);
       } catch (error) {
         log.error(`Gateway proxy error: ${String(error)}`);
