@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  platform:
+    build:
+      context: .
+      dockerfile: Dockerfile.platform
+    environment:
+      NODE_ENV: production
+      PLATFORM_PORT: "3000"
+      DATABASE_URL: postgres://openclaw:openclaw@postgres:5432/openclaw_platform
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: "24h"
+      BCRYPT_ROUNDS: "12"
+      CONTAINER_NETWORK: openclaw-orgs
+      CONTAINER_BASE_IMAGE: ${OPENCLAW_IMAGE:-openclaw:local}
+      CONTAINER_PORT_RANGE_START: "19000"
+      CONTAINER_PORT_RANGE_END: "19999"
+      CONTAINER_DATA_DIR: /data/orgs
+      CONTAINER_CPU_LIMIT: "1"
+      CONTAINER_MEMORY_LIMIT: "2g"
+      HEALTH_CHECK_INTERVAL: "30000"
+      HEALTH_UNHEALTHY_THRESHOLD: "3"
+      HEALTH_AUTO_RESTART: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - platform-data:/data/orgs
+      - ./ui/dist:/app/ui/dist:ro
+    ports:
+      - "${PLATFORM_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - platform
+      - openclaw-orgs
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: openclaw
+      POSTGRES_PASSWORD: openclaw
+      POSTGRES_DB: openclaw_platform
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openclaw -d openclaw_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@openclaw.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    networks:
+      - platform
+    profiles:
+      - admin
+    restart: unless-stopped
+
+networks:
+  platform:
+    driver: bridge
+  openclaw-orgs:
+    driver: bridge
+    name: openclaw-orgs
+
+volumes:
+  postgres-data:
+  platform-data:
+  pgadmin-data:

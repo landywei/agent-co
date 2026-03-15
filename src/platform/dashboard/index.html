@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1',
+            secondary: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+  <div x-data="app()" x-init="init()" x-cloak>
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <span class="text-xl font-bold text-primary">OpenClaw</span>
+            <span class="ml-2 text-sm text-gray-500">Platform</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <template x-if="user">
+              <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-700 dark:text-gray-300" x-text="user.email"></span>
+                <button @click="logout()" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                  Logout
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Auth Forms -->
+    <template x-if="!user">
+      <div class="max-w-md mx-auto mt-20 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <div class="flex mb-6">
+          <button @click="authMode = 'login'" 
+                  :class="authMode === 'login' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                  class="flex-1 pb-2 border-b-2 font-medium">
+            Login
+          </button>
+          <button @click="authMode = 'signup'"
+                  :class="authMode === 'signup' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                  class="flex-1 pb-2 border-b-2 font-medium">
+            Sign Up
+          </button>
+        </div>
+
+        <form @submit.prevent="authMode === 'login' ? login() : signup()">
+          <template x-if="authMode === 'signup'">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input x-model="authForm.name" type="text" required
+                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+            </div>
+          </template>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input x-model="authForm.email" type="email" required
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+            <input x-model="authForm.password" type="password" required
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+          </div>
+          <button type="submit" 
+                  class="w-full bg-primary hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+            <span x-text="authMode === 'login' ? 'Login' : 'Sign Up'"></span>
+          </button>
+        </form>
+
+        <template x-if="error">
+          <div class="mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md text-sm" x-text="error"></div>
+        </template>
+      </div>
+    </template>
+
+    <!-- Main Dashboard -->
+    <template x-if="user">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Organizations</h1>
+          <button @click="showCreateOrg = true"
+                  class="bg-primary hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+            Create Organization
+          </button>
+        </div>
+
+        <!-- Org List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <template x-for="org in orgs" :key="org.id">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="org.name"></h3>
+                  <p class="text-sm text-gray-500" x-text="org.slug"></p>
+                </div>
+                <span :class="{
+                  'bg-green-100 text-green-800': org.status === 'running',
+                  'bg-yellow-100 text-yellow-800': org.status === 'provisioning' || org.status === 'pending',
+                  'bg-red-100 text-red-800': org.status === 'error',
+                  'bg-gray-100 text-gray-800': org.status === 'stopped'
+                }" class="px-2 py-1 text-xs font-medium rounded-full" x-text="org.status"></span>
+              </div>
+
+              <div class="flex space-x-2 mt-4">
+                <template x-if="org.status === 'pending'">
+                  <button @click="provisionOrg(org.id)" 
+                          class="flex-1 bg-primary hover:bg-indigo-700 text-white text-sm py-2 px-3 rounded-md">
+                    Provision
+                  </button>
+                </template>
+                <template x-if="org.status === 'provisioning' || org.status === 'stopped'">
+                  <button @click="startOrg(org.id)"
+                          class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm py-2 px-3 rounded-md">
+                    Start
+                  </button>
+                </template>
+                <template x-if="org.status === 'running'">
+                  <button @click="stopOrg(org.id)"
+                          class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white text-sm py-2 px-3 rounded-md">
+                    Stop
+                  </button>
+                </template>
+                <button @click="selectOrg(org)"
+                        class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm py-2 px-3 rounded-md">
+                  Manage
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Empty State -->
+        <template x-if="orgs.length === 0">
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No organizations</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new organization.</p>
+          </div>
+        </template>
+
+        <!-- Create Org Modal -->
+        <template x-if="showCreateOrg">
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create Organization</h2>
+              <form @submit.prevent="createOrg()">
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                  <input x-model="newOrg.name" type="text" required
+                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug</label>
+                  <input x-model="newOrg.slug" type="text" required pattern="[a-z0-9-]+"
+                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                  <p class="mt-1 text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
+                </div>
+                <div class="flex space-x-3">
+                  <button type="button" @click="showCreateOrg = false"
+                          class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-md">
+                    Cancel
+                  </button>
+                  <button type="submit"
+                          class="flex-1 bg-primary hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md">
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </template>
+
+        <!-- Org Detail Modal -->
+        <template x-if="selectedOrg">
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="selectedOrg.name"></h2>
+                <button @click="selectedOrg = null" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Tabs -->
+              <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+                <nav class="flex space-x-8">
+                  <button @click="orgTab = 'overview'" 
+                          :class="orgTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                          class="py-2 px-1 border-b-2 font-medium text-sm">
+                    Overview
+                  </button>
+                  <button @click="orgTab = 'settings'"
+                          :class="orgTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                          class="py-2 px-1 border-b-2 font-medium text-sm">
+                    Settings
+                  </button>
+                  <button @click="orgTab = 'members'"
+                          :class="orgTab === 'members' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                          class="py-2 px-1 border-b-2 font-medium text-sm">
+                    Members
+                  </button>
+                  <button @click="orgTab = 'logs'"
+                          :class="orgTab === 'logs' ? 'border-primary text-primary' : 'border-transparent text-gray-500'"
+                          class="py-2 px-1 border-b-2 font-medium text-sm">
+                    Logs
+                  </button>
+                </nav>
+              </div>
+
+              <!-- Overview Tab -->
+              <template x-if="orgTab === 'overview'">
+                <div>
+                  <dl class="grid grid-cols-2 gap-4">
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Status</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white" x-text="selectedOrg.status"></dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Slug</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white" x-text="selectedOrg.slug"></dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Container Port</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white" x-text="selectedOrg.containerPort || 'N/A'"></dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Created</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white" x-text="new Date(selectedOrg.createdAt).toLocaleDateString()"></dd>
+                    </div>
+                  </dl>
+
+                  <template x-if="selectedOrg.status === 'running'">
+                    <div class="mt-6">
+                      <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gateway Access</h3>
+                      <code class="block p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm text-gray-800 dark:text-gray-200 break-all"
+                            x-text="`${window.location.origin}/api/orgs/${selectedOrg.id}/gateway`"></code>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Settings Tab -->
+              <template x-if="orgTab === 'settings'">
+                <div>
+                  <form @submit.prevent="updateOrgSettings()">
+                    <div class="space-y-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anthropic API Key</label>
+                        <input x-model="orgSettings.anthropicApiKey" type="password" placeholder="sk-ant-..."
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">OpenAI API Key</label>
+                        <input x-model="orgSettings.openaiApiKey" type="password" placeholder="sk-..."
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gateway Token</label>
+                        <input x-model="orgSettings.gatewayToken" type="password"
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                      </div>
+                    </div>
+                    <button type="submit" class="mt-6 bg-primary hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md">
+                      Save Settings
+                    </button>
+                  </form>
+                </div>
+              </template>
+
+              <!-- Members Tab -->
+              <template x-if="orgTab === 'members'">
+                <div>
+                  <div class="mb-4">
+                    <form @submit.prevent="addMember()" class="flex space-x-2">
+                      <input x-model="newMemberEmail" type="email" placeholder="user@example.com" required
+                             class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white">
+                      <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md">
+                        Add
+                      </button>
+                    </form>
+                  </div>
+                  <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <template x-for="member in orgMembers" :key="member.id">
+                      <li class="py-3 flex justify-between items-center">
+                        <div>
+                          <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="member.name"></p>
+                          <p class="text-sm text-gray-500" x-text="member.email"></p>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200" x-text="member.role"></span>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+
+              <!-- Logs Tab -->
+              <template x-if="orgTab === 'logs'">
+                <div>
+                  <button @click="fetchOrgLogs()" class="mb-4 text-sm text-primary hover:text-indigo-700">
+                    Refresh Logs
+                  </button>
+                  <pre class="p-4 bg-gray-900 text-gray-100 rounded-md text-xs overflow-x-auto max-h-96" x-text="orgLogs || 'No logs available'"></pre>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        user: null,
+        token: null,
+        authMode: 'login',
+        authForm: { email: '', password: '', name: '' },
+        error: null,
+        orgs: [],
+        showCreateOrg: false,
+        newOrg: { name: '', slug: '' },
+        selectedOrg: null,
+        orgTab: 'overview',
+        orgSettings: {},
+        orgMembers: [],
+        orgLogs: '',
+        newMemberEmail: '',
+
+        async init() {
+          const token = localStorage.getItem('token');
+          if (token) {
+            this.token = token;
+            await this.fetchUser();
+          }
+        },
+
+        async api(path, options = {}) {
+          const headers = { 'Content-Type': 'application/json' };
+          if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+          }
+          const response = await fetch(`/api${path}`, {
+            ...options,
+            headers: { ...headers, ...options.headers },
+            body: options.body ? JSON.stringify(options.body) : undefined,
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Request failed');
+          }
+          if (response.status === 204) return null;
+          return response.json();
+        },
+
+        async login() {
+          try {
+            this.error = null;
+            const data = await this.api('/auth/login', {
+              method: 'POST',
+              body: { email: this.authForm.email, password: this.authForm.password },
+            });
+            this.token = data.token;
+            this.user = data.user;
+            localStorage.setItem('token', data.token);
+            await this.fetchOrgs();
+          } catch (e) {
+            this.error = e.message;
+          }
+        },
+
+        async signup() {
+          try {
+            this.error = null;
+            const data = await this.api('/auth/signup', {
+              method: 'POST',
+              body: this.authForm,
+            });
+            this.token = data.token;
+            this.user = data.user;
+            localStorage.setItem('token', data.token);
+            await this.fetchOrgs();
+          } catch (e) {
+            this.error = e.message;
+          }
+        },
+
+        logout() {
+          this.user = null;
+          this.token = null;
+          this.orgs = [];
+          localStorage.removeItem('token');
+        },
+
+        async fetchUser() {
+          try {
+            const data = await this.api('/auth/me');
+            this.user = data.user;
+            this.orgs = data.orgs;
+          } catch {
+            this.logout();
+          }
+        },
+
+        async fetchOrgs() {
+          try {
+            this.orgs = await this.api('/orgs');
+          } catch (e) {
+            console.error('Failed to fetch orgs:', e);
+          }
+        },
+
+        async createOrg() {
+          try {
+            await this.api('/orgs', { method: 'POST', body: this.newOrg });
+            this.showCreateOrg = false;
+            this.newOrg = { name: '', slug: '' };
+            await this.fetchOrgs();
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async provisionOrg(orgId) {
+          try {
+            await this.api(`/orgs/${orgId}/provision`, { method: 'POST' });
+            await this.fetchOrgs();
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async startOrg(orgId) {
+          try {
+            await this.api(`/orgs/${orgId}/start`, { method: 'POST' });
+            await this.fetchOrgs();
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async stopOrg(orgId) {
+          try {
+            await this.api(`/orgs/${orgId}/stop`, { method: 'POST' });
+            await this.fetchOrgs();
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async selectOrg(org) {
+          this.selectedOrg = org;
+          this.orgTab = 'overview';
+          this.orgSettings = {};
+          this.orgMembers = [];
+          this.orgLogs = '';
+          await this.fetchOrgMembers();
+        },
+
+        async fetchOrgMembers() {
+          try {
+            this.orgMembers = await this.api(`/orgs/${this.selectedOrg.id}/members`);
+          } catch (e) {
+            console.error('Failed to fetch members:', e);
+          }
+        },
+
+        async addMember() {
+          try {
+            await this.api(`/orgs/${this.selectedOrg.id}/members`, {
+              method: 'POST',
+              body: { email: this.newMemberEmail },
+            });
+            this.newMemberEmail = '';
+            await this.fetchOrgMembers();
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async updateOrgSettings() {
+          try {
+            await this.api(`/orgs/${this.selectedOrg.id}/settings`, {
+              method: 'PATCH',
+              body: this.orgSettings,
+            });
+            alert('Settings saved');
+          } catch (e) {
+            alert(e.message);
+          }
+        },
+
+        async fetchOrgLogs() {
+          try {
+            const data = await this.api(`/orgs/${this.selectedOrg.id}/logs?tail=200`);
+            this.orgLogs = data.logs;
+          } catch (e) {
+            this.orgLogs = 'Failed to fetch logs: ' + e.message;
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>
