@@ -56,7 +56,8 @@ export async function startPlatformServer(options: PlatformServerOptions): Promi
 
   app.use(express.static("ui/dist"));
 
-  app.get("*", (_req, res) => {
+  // Catch-all for SPA routing - use regex for Express 5 compatibility
+  app.get(/^\/(?!api).*/, (_req, res) => {
     res.sendFile("index.html", { root: "ui/dist" });
   });
 
