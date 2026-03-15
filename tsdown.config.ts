@@ -56,4 +56,11 @@ export default defineConfig([
     fixedExtension: false,
     platform: "node",
   },
+  {
+    entry: "src/platform/cli.ts",
+    outDir: "dist/platform",
+    env,
+    fixedExtension: false,
+    platform: "node",
+  },
 ]);
