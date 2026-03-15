@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { setupApiRoutes } from "./api/routes.js";
@@ -6,6 +8,8 @@ import { createContainerManager, type ContainerManagerConfig } from "./container
 import { createPlatformDb, type PlatformDbConfig } from "./db/index.js";
 import { createHealthMonitor, type HealthMonitorConfig } from "./health/monitor.js";
 import { createOrgProxy, type OrgProxyConfig } from "./proxy/index.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const log = createSubsystemLogger("platform");
 
@@ -54,11 +58,12 @@ export async function startPlatformServer(options: PlatformServerOptions): Promi
     proxy,
   });
 
-  app.use(express.static("ui/dist"));
+  // Serve dashboard HTML directly from the platform directory
+  const dashboardPath = path.join(__dirname, "dashboard", "index.html");
 
-  // Catch-all for SPA routing - use regex for Express 5 compatibility
+  // Catch-all for SPA routing - serve the dashboard HTML
   app.get(/^\/(?!api).*/, (_req, res) => {
-    res.sendFile("index.html", { root: "ui/dist" });
+    res.sendFile(dashboardPath);
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
