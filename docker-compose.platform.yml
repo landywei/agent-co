@@ -22,10 +22,10 @@ services:
       HEALTH_CHECK_INTERVAL: "30000"
       HEALTH_UNHEALTHY_THRESHOLD: "3"
       HEALTH_AUTO_RESTART: "true"
+    user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-data:/data/orgs
-      - ./ui/dist:/app/ui/dist:ro
     ports:
       - "${PLATFORM_PORT:-3000}:3000"
     depends_on:
