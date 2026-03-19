@@ -9,6 +9,7 @@ import {
 } from "./app-polling.ts";
 import { observeTopbar, scheduleChatScroll, scheduleLogsScroll } from "./app-scroll.ts";
 import {
+  applySettings,
   applySettingsFromUrl,
   attachThemeListener,
   detachThemeListener,
@@ -22,6 +23,7 @@ import type { Tab } from "./navigation.ts";
 type LifecycleHost = {
   basePath: string;
   tab: Tab;
+  settings: import("./storage.ts").UiSettings;
   assistantName: string;
   assistantAvatar: string | null;
   assistantAgentId: string | null;
@@ -40,13 +42,23 @@ type LifecycleHost = {
 
 export function handleConnected(host: LifecycleHost) {
   host.basePath = inferBasePath();
-  void loadControlUiBootstrapConfig(host);
-  applySettingsFromUrl(host as unknown as Parameters<typeof applySettingsFromUrl>[0]);
   syncTabWithLocation(host as unknown as Parameters<typeof syncTabWithLocation>[0], true);
   syncThemeWithSettings(host as unknown as Parameters<typeof syncThemeWithSettings>[0]);
   attachThemeListener(host as unknown as Parameters<typeof attachThemeListener>[0]);
   window.addEventListener("popstate", host.popStateHandler);
-  connectGateway(host as unknown as Parameters<typeof connectGateway>[0]);
+
+  void (async () => {
+    const bootstrap = await loadControlUiBootstrapConfig(host);
+    if (bootstrap.authToken && !host.settings.token.trim()) {
+      applySettings(host as unknown as Parameters<typeof applySettings>[0], {
+        ...host.settings,
+        token: bootstrap.authToken,
+      });
+    }
+    applySettingsFromUrl(host as unknown as Parameters<typeof applySettingsFromUrl>[0]);
+    connectGateway(host as unknown as Parameters<typeof connectGateway>[0]);
+  })();
+
   startNodesPolling(host as unknown as Parameters<typeof startNodesPolling>[0]);
   if (host.tab === "logs") {
     startLogsPolling(host as unknown as Parameters<typeof startLogsPolling>[0]);

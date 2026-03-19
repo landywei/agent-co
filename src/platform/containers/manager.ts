@@ -120,7 +120,9 @@ export async function createContainerManager(
       const { spawn } = await import("node:child_process");
       await new Promise<void>((resolve, reject) => {
         const proc = spawn("chown", ["-R", "1000:1000", openclawDir]);
-        proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`chown failed with code ${code}`))));
+        proc.on("close", (code) =>
+          code === 0 ? resolve() : reject(new Error(`chown failed with code ${code}`)),
+        );
         proc.on("error", reject);
       });
     } catch (error) {
@@ -128,11 +130,15 @@ export async function createContainerManager(
     }
 
     // Copy config-backup.json to org's openclaw.json (like reset-company.sh does)
-    const configBackupPath = config.configBackupPath || path.join(process.cwd(), "config-backup.json");
+    const configBackupPath =
+      config.configBackupPath || path.join(process.cwd(), "config-backup.json");
     const orgConfigPath = path.join(openclawDir, "openclaw.json");
 
     try {
-      const backupExists = await fs.stat(configBackupPath).then(() => true).catch(() => false);
+      const backupExists = await fs
+        .stat(configBackupPath)
+        .then(() => true)
+        .catch(() => false);
       if (backupExists) {
         const backupContent = await fs.readFile(configBackupPath, "utf-8");
         const backup = JSON.parse(backupContent);
@@ -152,7 +158,9 @@ export async function createContainerManager(
 
         // Copy all other keys using dot-notation path setting
         for (const [k, v] of Object.entries(backup)) {
-          if (k === "models") continue;
+          if (k === "models") {
+            continue;
+          }
           setNestedPath(cfg, k, v);
         }
 
@@ -190,9 +198,12 @@ export async function createContainerManager(
 
   function buildEnvVars(settings: OrgSettings): string[] {
     const envVars: string[] = [
-      "-e", "HOME=/home/node",
-      "-e", "TERM=xterm-256color",
-      "-e", "OPENCLAW_ALLOW_INSECURE_CONTROL_UI=1",
+      "-e",
+      "HOME=/home/node",
+      "-e",
+      "TERM=xterm-256color",
+      "-e",
+      "OPENCLAW_ALLOW_INSECURE_CONTROL_UI=1",
     ];
 
     if (settings.gatewayToken) {
@@ -404,7 +415,11 @@ export async function createContainerManager(
       }
 
       try {
-        const response = await fetch(`http://localhost:${container.port}/health`, {
+        // Use Docker DNS name + internal port so the check works from
+        // within the platform container on the shared Docker network.
+        const internalHost = containerName(orgId);
+        const internalPort = 18789;
+        const response = await fetch(`http://${internalHost}:${internalPort}/health`, {
           signal: AbortSignal.timeout(5000),
         });
         const healthy = response.ok;

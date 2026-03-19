@@ -5,4 +5,6 @@ export type ControlUiBootstrapConfig = {
   assistantName: string;
   assistantAvatar: string;
   assistantAgentId: string;
+  /** Pre-filled auth token (only sent when dangerouslyDisableDeviceAuth is enabled). */
+  authToken?: string;
 };

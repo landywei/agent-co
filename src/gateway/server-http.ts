@@ -495,6 +495,20 @@ export function createGatewayHttpServer(opts: {
       return;
     }
 
+    // Lightweight liveness for load balancers / platform (before loadConfig + hooks).
+    const probePath = new URL(req.url ?? "/", "http://localhost").pathname;
+    if (probePath === "/health" && (req.method === "GET" || req.method === "HEAD")) {
+      res.setHeader("Cache-Control", "no-cache");
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      if (req.method === "HEAD") {
+        res.end();
+      } else {
+        res.end(JSON.stringify({ ok: true, service: "openclaw-gateway" }));
+      }
+      return;
+    }
+
     try {
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
@@ -607,6 +621,7 @@ export function createGatewayHttpServer(opts: {
             basePath: controlUiBasePath,
             config: configSnapshot,
             root: controlUiRoot,
+            resolvedAuthToken: resolvedAuth.token,
           })
         ) {
           return;
