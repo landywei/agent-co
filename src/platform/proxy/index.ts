@@ -17,26 +17,31 @@ export interface OrgProxy {
   getOrgEndpoint(orgId: OrgId): Promise<string | null>;
 }
 
+// Org containers are on the openclaw-orgs Docker network and always bind to
+// port 18789 internally. Use the deterministic container name for routing so
+// the platform container doesn't need to reach the Docker host's port mapping.
+function orgContainerHost(orgId: OrgId): string {
+  return `openclaw-org-${orgId}`;
+}
+
+const ORG_INTERNAL_PORT = 18789;
+
 export async function createOrgProxy(db: PlatformDb, config: OrgProxyConfig): Promise<OrgProxy> {
   const http = await import("node:http");
 
-  async function getOrgPort(orgId: OrgId): Promise<number | null> {
+  async function isOrgRunning(orgId: OrgId): Promise<boolean> {
     const container = await db.containers.findByOrgId(orgId);
-    if (!container || container.status !== "running") {
-      return null;
-    }
-    return container.port;
+    return container?.status === "running";
   }
 
   return {
     async proxyRequest(orgId, req, res) {
-      const port = await getOrgPort(orgId);
-      if (!port) {
+      if (!(await isOrgRunning(orgId))) {
         res.status(503).json({ error: "Organization gateway not available" });
         return;
       }
 
-      const targetUrl = `http://localhost:${port}${req.url}`;
+      const targetUrl = `http://${orgContainerHost(orgId)}:${ORG_INTERNAL_PORT}${req.url}`;
       log.debug(`Proxying request to org ${orgId}: ${req.method} ${targetUrl}`);
 
       try {
@@ -75,24 +80,25 @@ export async function createOrgProxy(db: PlatformDb, config: OrgProxyConfig): Pr
     },
 
     async proxyWebSocket(orgId, req, socket, _head) {
-      const port = await getOrgPort(orgId);
-      if (!port) {
+      if (!(await isOrgRunning(orgId))) {
         const sock = socket as import("node:net").Socket;
         sock.write("HTTP/1.1 503 Service Unavailable\r\n\r\n");
         sock.destroy();
         return;
       }
 
-      log.debug(`Proxying WebSocket to org ${orgId}: port ${port}`);
+      log.debug(
+        `Proxying WebSocket to org ${orgId} via ${orgContainerHost(orgId)}:${ORG_INTERNAL_PORT}`,
+      );
 
       const targetReq = http.request({
-        hostname: "localhost",
-        port,
+        hostname: orgContainerHost(orgId),
+        port: ORG_INTERNAL_PORT,
         path: req.url,
         method: "GET",
         headers: {
           ...req.headers,
-          host: `localhost:${port}`,
+          host: `${orgContainerHost(orgId)}:${ORG_INTERNAL_PORT}`,
         },
       });
 
@@ -135,11 +141,10 @@ export async function createOrgProxy(db: PlatformDb, config: OrgProxyConfig): Pr
     },
 
     async getOrgEndpoint(orgId) {
-      const port = await getOrgPort(orgId);
-      if (!port) {
+      if (!(await isOrgRunning(orgId))) {
         return null;
       }
-      return `http://localhost:${port}`;
+      return `http://${orgContainerHost(orgId)}:${ORG_INTERNAL_PORT}`;
     },
   };
 }

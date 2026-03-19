@@ -570,6 +570,65 @@ export function setupApiRoutes(app: Express, config: ApiRoutesConfig): void {
     },
   );
 
+  // Serve workstream.html with injected auto-connect config so the browser
+  // can establish an authenticated WS connection without manual setup.
+  app.get(
+    /^\/api\/orgs\/([^/]+)\/gateway\/workstream\.html$/,
+    requireAuth,
+    async (req: Request, _res, next) => {
+      const match = req.path.match(/^\/api\/orgs\/([^/]+)\/gateway/);
+      if (match) {
+        req.params.orgId = match[1];
+      }
+      next();
+    },
+    requireOrgAccess(),
+    async (req: Request, res: Response) => {
+      try {
+        const org = await db.orgs.findById(req.orgId!);
+        if (!org) {
+          res.status(404).json({ error: "Organization not found" });
+          return;
+        }
+
+        const endpoint = await proxy.getOrgEndpoint(req.orgId!);
+        if (!endpoint) {
+          res.status(503).json({ error: "Organization gateway not available" });
+          return;
+        }
+
+        const upstream = await fetch(`${endpoint}/workstream.html`, {
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!upstream.ok) {
+          res.status(502).json({ error: "Failed to fetch workstream from gateway" });
+          return;
+        }
+
+        let html = await upstream.text();
+
+        // Inject config so workstream.html auto-connects via the platform proxy.
+        // The gateway token is used as the WS credential — the WS upgrade handler
+        // accepts it as an alternative to a platform JWT.
+        const wsPath = `/api/orgs/${req.orgId}/gateway`;
+        const token = org.settings.gatewayToken ?? "";
+        const inject = `<script>window.__AUTO_CONNECT=${JSON.stringify({ wsPath, token })};</script>`;
+        html = html.includes("</head>")
+          ? html.replace("</head>", inject + "</head>")
+          : inject + html;
+
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
+        res.send(html);
+      } catch (error) {
+        log.error(`workstream.html proxy error for org ${req.orgId}: ${String(error)}`);
+        if (!res.headersSent) {
+          res.status(502).json({ error: "Gateway proxy error" });
+        }
+      }
+    },
+  );
+
   // Gateway proxy routes - use regex for Express 5 compatibility
   app.all(
     /^\/api\/orgs\/([^/]+)\/gateway(\/.*)?$/,
@@ -584,8 +643,8 @@ export function setupApiRoutes(app: Express, config: ApiRoutesConfig): void {
     requireOrgAccess(),
     async (req: Request, res: Response) => {
       try {
-        const gatewayPath = req.path.replace(/^\/api\/orgs\/[^/]+\/gateway/, "") || "/";
-        req.url = gatewayPath;
+        const stripped = req.path.replace(/^\/api\/orgs\/[^/]+\/gateway/, "") || "/";
+        req.url = stripped.startsWith("/") ? stripped : "/" + stripped;
         await proxy.proxyRequest(req.orgId!, req, res);
       } catch (error) {
         log.error(`Gateway proxy error: ${String(error)}`);

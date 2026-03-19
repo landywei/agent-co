@@ -105,7 +105,21 @@ export async function createContainerManager(
     }
   }
 
-  async function ensureOrgDataDir(orgId: OrgId): Promise<string> {
+  /** Read config-backup.json and return the gateway.auth.token value if present. */
+  async function readConfigBackupToken(): Promise<string | undefined> {
+    const configBackupPath =
+      config.configBackupPath || path.join(process.cwd(), "config-backup.json");
+    try {
+      const content = await fs.readFile(configBackupPath, "utf-8");
+      const backup = JSON.parse(content) as Record<string, unknown>;
+      const token = backup["gateway.auth.token"];
+      return typeof token === "string" && token ? token : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async function ensureOrgDataDir(orgId: OrgId, gatewayToken: string): Promise<string> {
     const orgDataDir = path.join(config.dataDir, orgId);
     const openclawDir = path.join(orgDataDir, ".openclaw");
     const workspaceDir = path.join(openclawDir, "workspace");
@@ -114,22 +128,8 @@ export async function createContainerManager(
     await fs.mkdir(workspaceDir, { recursive: true });
     await fs.mkdir(skillsDir, { recursive: true });
 
-    // Set ownership to node user (uid 1000) so org containers can write
-    // The org container runs as 'node' user which has uid 1000
-    try {
-      const { spawn } = await import("node:child_process");
-      await new Promise<void>((resolve, reject) => {
-        const proc = spawn("chown", ["-R", "1000:1000", openclawDir]);
-        proc.on("close", (code) =>
-          code === 0 ? resolve() : reject(new Error(`chown failed with code ${code}`)),
-        );
-        proc.on("error", reject);
-      });
-    } catch (error) {
-      log.warn(`Failed to set ownership for org ${orgId}: ${String(error)}`);
-    }
-
-    // Copy config-backup.json to org's openclaw.json (like reset-company.sh does)
+    // Copy config-backup.json to org's openclaw.json (like reset-company.sh does),
+    // then stamp gateway.auth.token so the container and platform DB always agree.
     const configBackupPath =
       config.configBackupPath || path.join(process.cwd(), "config-backup.json");
     const orgConfigPath = path.join(openclawDir, "openclaw.json");
@@ -164,12 +164,16 @@ export async function createContainerManager(
           setNestedPath(cfg, k, v);
         }
 
+        // Always overwrite gateway.auth.token with the platform-managed token so
+        // the value in openclaw.json, the env var, and the DB settings stay in sync.
+        setNestedPath(cfg, "gateway.auth.token", gatewayToken);
+
         await fs.writeFile(orgConfigPath, JSON.stringify(cfg, null, 2) + "\n");
         log.info(`Created openclaw.json for org ${orgId} from config-backup.json`);
       } else {
         // Create minimal config if no backup exists
         const minimalConfig = {
-          gateway: { mode: "local" },
+          gateway: { mode: "local", auth: { token: gatewayToken } },
         };
         await fs.writeFile(orgConfigPath, JSON.stringify(minimalConfig, null, 2) + "\n");
         log.warn(`No config-backup.json found, created minimal config for org ${orgId}`);
@@ -177,8 +181,23 @@ export async function createContainerManager(
     } catch (error) {
       log.error(`Failed to create config for org ${orgId}: ${String(error)}`);
       // Create minimal config as fallback
-      const minimalConfig = { gateway: { mode: "local" } };
+      const minimalConfig = { gateway: { mode: "local", auth: { token: gatewayToken } } };
       await fs.writeFile(orgConfigPath, JSON.stringify(minimalConfig, null, 2) + "\n");
+    }
+
+    // Set ownership to node user (uid 1000) AFTER writing all files so
+    // openclaw.json (written above by root) is also covered.
+    try {
+      const { spawn } = await import("node:child_process");
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn("chown", ["-R", "1000:1000", openclawDir]);
+        proc.on("close", (code) =>
+          code === 0 ? resolve() : reject(new Error(`chown failed with code ${code}`)),
+        );
+        proc.on("error", reject);
+      });
+    } catch (error) {
+      log.warn(`Failed to set ownership for org ${orgId}: ${String(error)}`);
     }
 
     return orgDataDir;
@@ -225,10 +244,27 @@ export async function createContainerManager(
 
       await ensureNetwork();
       const port = await findAvailablePort();
-      const orgDataDir = await ensureOrgDataDir(org.id);
       const name = containerName(org.id);
 
-      const envVars = buildEnvVars(org.settings);
+      // Resolve the gateway token first — prefer existing settings, then
+      // config-backup.json's gateway.auth.token, then auto-generate.
+      // Stored in DB and stamped into openclaw.json so the platform, env var,
+      // and config file always agree (authConfig.token takes precedence over env).
+      let settings = org.settings;
+      if (!settings.gatewayToken) {
+        const backupToken = await readConfigBackupToken();
+        const { randomBytes } = await import("node:crypto");
+        const resolved = backupToken ?? randomBytes(32).toString("hex");
+        const updated = await db.orgs.updateSettings(org.id, { gatewayToken: resolved });
+        settings = updated?.settings ?? { ...settings, gatewayToken: resolved };
+        log.info(
+          `Resolved gateway token for org ${org.id} (source: ${backupToken ? "config-backup" : "generated"})`,
+        );
+      }
+
+      const orgDataDir = await ensureOrgDataDir(org.id, settings.gatewayToken!);
+
+      const envVars = buildEnvVars(settings);
       const resourceLimits: string[] = [];
       if (config.cpuLimit) {
         resourceLimits.push("--cpus", config.cpuLimit);

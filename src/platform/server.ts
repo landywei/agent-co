@@ -100,21 +100,32 @@ export async function startPlatformServer(options: PlatformServerOptions): Promi
               return;
             }
 
+            // Accept either a platform JWT (dashboard users) or the org's gateway
+            // token (injected into workstream.html for direct operator access).
+            let authorized = false;
             const payload = await authService.verifyToken(token);
-            if (!payload) {
+            if (payload) {
+              const membership = await db.memberships.findByUserAndOrg(payload.userId, orgId);
+              if (membership) {
+                authorized = true;
+              }
+            }
+            if (!authorized) {
+              const org = await db.orgs.findById(orgId);
+              if (org?.settings?.gatewayToken && org.settings.gatewayToken === token) {
+                authorized = true;
+              }
+            }
+
+            if (!authorized) {
               socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
               socket.destroy();
               return;
             }
 
-            const membership = await db.memberships.findByUserAndOrg(payload.userId, orgId);
-            if (!membership) {
-              socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
-              socket.destroy();
-              return;
-            }
-
-            req.url = req.url?.replace(`/api/orgs/${orgId}/gateway`, "") || "/";
+            const stripped = req.url?.replace(`/api/orgs/${orgId}/gateway`, "") || "/";
+            // Ensure result is a valid HTTP path (e.g. "?token=…" → "/?token=…")
+            req.url = stripped.startsWith("/") ? stripped : "/" + stripped;
             await proxy.proxyWebSocket(orgId, req as express.Request, socket, head);
           } else {
             socket.write("HTTP/1.1 404 Not Found\r\n\r\n");

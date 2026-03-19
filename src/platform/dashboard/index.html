@@ -141,6 +141,13 @@
                     Stop
                   </button>
                 </template>
+                <template x-if="org.status === 'running'">
+                  <a :href="`/api/orgs/${org.id}/gateway/workstream.html?token=${token}`"
+                     target="_blank"
+                     class="flex-1 text-center bg-primary hover:bg-indigo-700 text-white text-sm py-2 px-3 rounded-md">
+                    Workstream
+                  </a>
+                </template>
                 <button @click="selectOrg(org)"
                         class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm py-2 px-3 rounded-md">
                   Manage
@@ -259,6 +266,17 @@
                       <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gateway Access</h3>
                       <code class="block p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm text-gray-800 dark:text-gray-200 break-all"
                             x-text="`${window.location.origin}/api/orgs/${selectedOrg.id}/gateway`"></code>
+                    </div>
+                  </template>
+
+                  <template x-if="selectedOrg.role === 'owner'">
+                    <div class="mt-8 pt-6 border-t border-red-200 dark:border-red-800">
+                      <h3 class="text-sm font-medium text-red-700 dark:text-red-400 mb-2">Danger Zone</h3>
+                      <p class="text-sm text-gray-500 mb-3">Permanently delete this organization and all associated data. This cannot be undone.</p>
+                      <button @click="deleteOrg(selectedOrg.id)"
+                              class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">
+                        Delete Organization
+                      </button>
                     </div>
                   </template>
                 </div>
@@ -429,7 +447,9 @@
 
         async fetchOrgs() {
           try {
-            this.orgs = await this.api('/orgs');
+            // Use /auth/me so orgs include the member's role field.
+            const data = await this.api('/auth/me');
+            this.orgs = data.orgs;
           } catch (e) {
             console.error('Failed to fetch orgs:', e);
           }
@@ -470,6 +490,17 @@
             await this.fetchOrgs();
           } catch (e) {
             alert(e.message);
+          }
+        },
+
+        async deleteOrg(orgId) {
+          if (!confirm(`Delete "${this.selectedOrg.name}"? This will remove the container and all data and cannot be undone.`)) return;
+          try {
+            await this.api(`/orgs/${orgId}`, { method: 'DELETE' });
+            this.selectedOrg = null;
+            await this.fetchOrgs();
+          } catch (e) {
+            alert('Failed to delete organization: ' + e.message);
           }
         },
 

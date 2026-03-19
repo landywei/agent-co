@@ -141,13 +141,20 @@ export async function createAuthService(db: PlatformDb, config: AuthConfig): Pro
 export function createAuthMiddleware(db: PlatformDb, authService: AuthService): AuthMiddleware {
   return {
     async requireAuth(req, res, next) {
+      // Accept token from Authorization header or ?token= query param
+      // (query param allows direct browser navigation to API-served pages).
       const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith("Bearer ")) {
+      const token = authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : typeof req.query.token === "string"
+          ? req.query.token
+          : null;
+
+      if (!token) {
         res.status(401).json({ error: "Missing or invalid authorization header" });
         return;
       }
 
-      const token = authHeader.slice(7);
       const payload = await authService.verifyToken(token);
       if (!payload) {
         res.status(401).json({ error: "Invalid or expired token" });

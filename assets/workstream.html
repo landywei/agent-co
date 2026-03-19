@@ -2007,6 +2007,8 @@ function renderDetails(pos, el) {
     setTimeout(() => fetchAgentFiles(pos.id), 50);
   } else if (isLoading) {
     h += `<div class="agent-file-loading"><span class="spinner"></span> Reading workspace files...</div>`;
+  } else if (cache?.error) {
+    h += `<div class="agent-file-loading" style="color:var(--text-dim)">${esc(cache.error)} — <a href="#" onclick="fetchAgentFiles('${pos.id}');return false" style="color:var(--accent)">Retry</a></div>`;
   } else {
     FILE_SECTIONS.forEach(sec => {
       const content = files[sec.key];
@@ -2566,7 +2568,14 @@ async function loadAllAgentFilesViaRpc() {
 }
 
 async function loadSingleAgentFilesViaRpc(agentId) {
-  if (!wsConnected) { return; }
+  if (!wsConnected) {
+    agentFileCache[agentId] = { loading: false, files: {}, lastFetch: Date.now(), error: 'Not connected' };
+    const freshPos = findPos(agentId);
+    if (freshPos && state.selectedId === agentId && state.activeTab === 'details') {
+      renderDetails(freshPos, document.getElementById('panelBody'));
+    }
+    return;
+  }
   try {
     const listRes = await sendReq('agents.files.list', { agentId });
     const files = {};
@@ -2908,22 +2917,33 @@ function handleTaskEvent(event, payload) {
 /* ═══════════════════════════════════════
    PERSISTENCE
    ═══════════════════════════════════════ */
-function autoSave() { try{localStorage.setItem('ws_state',JSON.stringify({positions:state.positions,kb:state.kb,kbFileList:kbFileList,deployed:state.deployed,deployedIds:state.deployedIds,channels:state.channels,companyGoal:state.companyGoal||''}));}catch{} }
+// Scope localStorage keys per-org so multi-tenant orgs don't share state.
+const _orgId = (function() {
+  try {
+    if (window.__AUTO_CONNECT && window.__AUTO_CONNECT.wsPath) {
+      const m = window.__AUTO_CONNECT.wsPath.match(/\/api\/orgs\/([^/]+)\//);
+      if (m) return m[1];
+    }
+  } catch {}
+  return '';
+})();
+function _lsKey(name) { return _orgId ? name + '_' + _orgId : name; }
+function autoSave() { try{localStorage.setItem(_lsKey('ws_state'),JSON.stringify({positions:state.positions,kb:state.kb,kbFileList:kbFileList,deployed:state.deployed,deployedIds:state.deployedIds,channels:state.channels,companyGoal:state.companyGoal||''}));}catch{} }
 function saveToLocal() { autoSave(); const f=document.createElement('div'); f.textContent='Saved'; f.style.cssText='position:fixed;top:60px;right:20px;background:var(--green);color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;z-index:99;animation:fadeout 1.5s forwards'; document.body.appendChild(f); setTimeout(()=>f.remove(),1500); }
-function loadLocal() { try{ const r=localStorage.getItem('ws_state'); if(r){const s=JSON.parse(r); state.positions=s.positions||[]; state.kb=s.kb||{}; state.deployed=s.deployed||false; state.deployedIds=s.deployedIds||[]; state.channels=s.channels||[]; state.companyGoal=s.companyGoal||''; state.selectedId=null; state.selectedChannelId=null; state.activeTab='details'; if(s.kbFileList&&s.kbFileList.length){kbFileList=s.kbFileList;kbLoaded=true;}} }catch{} }
+function loadLocal() { try{ const r=localStorage.getItem(_lsKey('ws_state')); if(r){const s=JSON.parse(r); state.positions=s.positions||[]; state.kb=s.kb||{}; state.deployed=s.deployed||false; state.deployedIds=s.deployedIds||[]; state.channels=s.channels||[]; state.companyGoal=s.companyGoal||''; state.selectedId=null; state.selectedChannelId=null; state.activeTab='details'; if(s.kbFileList&&s.kbFileList.length){kbFileList=s.kbFileList;kbLoaded=true;}} }catch{} }
 
 /* ═══════════════════════════════════════
    INIT
    ═══════════════════════════════════════ */
 loadLocal();
 // Detect company reset — if reset-ts.js has a newer timestamp, wipe localStorage state
-if (window.__RESET_TS && window.__RESET_TS !== parseInt(localStorage.getItem('ws_reset_ts') || '0')) {
+if (window.__RESET_TS && window.__RESET_TS !== parseInt(localStorage.getItem(_lsKey('ws_reset_ts')) || '0')) {
   state.channels = [];
   state.positions = []; state.deployed = false; state.deployedIds = [];
   state.kb = {}; state.companyGoal = ''; state.selectedId = null;
   kbFileList = []; kbLoaded = false;
   Object.keys(agentFileCache).forEach(k => delete agentFileCache[k]);
-  localStorage.setItem('ws_reset_ts', String(window.__RESET_TS));
+  localStorage.setItem(_lsKey('ws_reset_ts'), String(window.__RESET_TS));
   autoSave();
 }
 if (window.__RESET_TS) delete window.__RESET_TS;
@@ -2933,27 +2953,37 @@ if (state.positions.length && !state.positions.find(p => p.id === 'main')) {
   state.kb = {}; state.companyGoal = ''; autoSave();
 }
 // One-time migration: clear leftover data from old agents
-if (!localStorage.getItem('ws_v2_migrated')) {
+if (!localStorage.getItem(_lsKey('ws_v2_migrated'))) {
   state.channels = []; state.kb = {};
   state.deployed = false; state.deployedIds = [];
-  localStorage.setItem('ws_v2_migrated', '1'); autoSave();
+  localStorage.setItem(_lsKey('ws_v2_migrated'), '1'); autoSave();
 }
 // v3 migration: KB is now file-based — clear old localStorage KB and force re-fetch from disk
-if (!localStorage.getItem('ws_v3_kb_live')) {
+if (!localStorage.getItem(_lsKey('ws_v3_kb_live'))) {
   state.kb = {}; kbFileList = []; kbLoaded = false;
-  localStorage.setItem('ws_v3_kb_live', '1'); autoSave();
+  localStorage.setItem(_lsKey('ws_v3_kb_live'), '1'); autoSave();
 }
 // v6 migration: full company reset
-if (!localStorage.getItem('ws_v6_reset')) {
+if (!localStorage.getItem(_lsKey('ws_v6_reset'))) {
   state.channels = []; state.kb = {};
   state.positions = []; state.deployed = false; state.deployedIds = [];
   state.selectedId = null; state.companyGoal = '';
   kbFileList = []; kbLoaded = false;
   Object.keys(agentFileCache).forEach(k => delete agentFileCache[k]);
-  localStorage.setItem('ws_v6_reset', '1'); autoSave();
+  localStorage.setItem(_lsKey('ws_v6_reset'), '1'); autoSave();
 }
 renderAll();
-const gw=loadGw(); if(gw.token) { document.getElementById('gwUrl').value=gw.url; document.getElementById('gwToken').value=gw.token; doConnect(gw.url, gw.token); }
+if (window.__AUTO_CONNECT) {
+  // Platform injected connection config — auto-connect via proxy using the org gateway token.
+  const { wsPath, token } = window.__AUTO_CONNECT;
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${location.host}${wsPath}`;
+  document.getElementById('gwUrl').value = wsUrl;
+  document.getElementById('gwToken').value = token;
+  doConnect(wsUrl, token);
+} else {
+  const gw=loadGw(); if(gw.token) { document.getElementById('gwUrl').value=gw.url; document.getElementById('gwToken').value=gw.token; doConnect(gw.url, gw.token); }
+}
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleNavPanel(); }
