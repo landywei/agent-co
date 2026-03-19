@@ -153,7 +153,131 @@ scripts/workstream/
 - A **watchdog** monitors active tasks for stale heartbeats (15min threshold) and alerts via the dashboard
 - Humans monitor all task activity in real time at the workstream dashboard (`/workstream.html` → Tasks tab)
 
+## Platform
+
+The platform layer (`src/platform/`) turns the single-company setup into a multi-tenant
+service: one platform process manages N isolated agent-company instances, each running
+in its own Docker container.
+
+```
+┌─────────────────────────────────────────────────┐
+│  Platform server  (port 3000)                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │  Auth    │  │  Orgs    │  │  Dashboard   │  │
+│  │  (JWT)   │  │  (CRUD)  │  │  (SPA UI)    │  │
+│  └──────────┘  └──────────┘  └──────────────┘  │
+│  ┌─────────────────────────────────────────────┐│
+│  │  Gateway proxy  /api/orgs/:id/gateway/*     ││
+│  └─────────────────────────────────────────────┘│
+└──────────┬──────────────────────┬───────────────┘
+           │ Docker               │ Docker
+   ┌───────▼──────┐       ┌───────▼──────┐
+   │ openclaw-org │  ...  │ openclaw-org │
+   │  (org-abc)   │       │  (org-xyz)   │
+   │  port 19000  │       │  port 19001  │
+   └──────────────┘       └──────────────┘
+        Postgres (platform DB: users, orgs, memberships)
+```
+
+**What each piece does:**
+
+- **Container manager** — provisions a Docker container per org from the `openclaw:local`
+  base image, assigns a port from the range `19000–19999`, mounts
+  `/var/lib/openclaw/orgs/<orgId>/.openclaw` as the org's config/workspace volume,
+  and starts the OpenClaw gateway on port 18789 inside the container.
+- **Auth** — JWT-based signup/login; memberships with `owner / admin / member` roles.
+- **Gateway proxy** — all requests to `/api/orgs/:orgId/gateway/*` are forwarded to the
+  org's container over the shared `openclaw-orgs` Docker network. WebSocket upgrades
+  (for the workstream UI) are proxied the same way.
+- **Health monitor** — polls each running container's `/health` endpoint every 30 s;
+  after 3 consecutive failures it auto-restarts the container.
+- **Dashboard** — a single-page app served at `/` for managing orgs, members, and
+  watching gateway status.
+- **Postgres** — stores users, orgs, memberships, containers, and audit logs.
+
+### `config-backup.json`
+
+Each new org container is seeded from `config-backup.json` at the repo root. The
+platform reads this file at provision time, transforms it into `openclaw.json` format,
+stamps in a unique `gateway.auth.token`, and writes it into the org's volume before
+starting the container. This means model provider keys, tool API keys, agent defaults,
+and channel tokens are shared across all orgs automatically — configure once, provision
+many.
+
+```jsonc
+// config-backup.json (not committed — copy from config-backup.example.json)
+{
+  "models": { "mode": "merge", "providers": { "openrouter": { ... } } },
+  "agents.defaults.model.primary": "openrouter/moonshotai/kimi-k2.5",
+  "tools.web.search.apiKey": "...",
+  "gateway.mode": "local",
+  "agents.defaults.heartbeat.every": "2m"
+}
+```
+
+### Running the platform with Docker Compose
+
+```bash
+# 1. Build the base agent image (used by every org container)
+docker build -t openclaw:local .
+
+# 2. Build the platform image
+docker build -f Dockerfile.platform -t openclaw-platform .
+
+# 3. Copy and configure the seed file
+cp config-backup.example.json config-backup.json
+# Edit config-backup.json with your API keys
+
+# 4. Start the platform + Postgres
+JWT_SECRET=change-me docker compose -f docker-compose.platform.yml up -d
+
+# Optional: include pgAdmin on port 5050
+JWT_SECRET=change-me docker compose -f docker-compose.platform.yml \
+  --profile admin up -d
+```
+
+The platform is now running at **http://localhost:3000**.
+
+**Environment variables** (set in your shell or a `.env` file):
+
+| Variable                 | Default                   | Description                         |
+| ------------------------ | ------------------------- | ----------------------------------- |
+| `JWT_SECRET`             | `change-me-in-production` | JWT signing secret                  |
+| `PLATFORM_PORT`          | `3000`                    | Platform HTTP port                  |
+| `OPENCLAW_IMAGE`         | `openclaw:local`          | Base image for org containers       |
+| `CONTAINER_DATA_DIR`     | `/var/lib/openclaw/orgs`  | Host path for org volumes           |
+| `CONTAINER_CPU_LIMIT`    | _(none)_                  | Docker CPU quota per org (e.g. `1`) |
+| `CONTAINER_MEMORY_LIMIT` | `2g`                      | Docker memory limit per org         |
+
+### Org lifecycle
+
+```
+POST /api/auth/signup          # create account
+POST /api/auth/login           # get JWT
+
+POST /api/orgs                 # create org record
+POST /api/orgs/:id/provision   # spin up Docker container
+POST /api/orgs/:id/start       # start a stopped container
+POST /api/orgs/:id/stop        # graceful stop
+POST /api/orgs/:id/restart     # restart
+
+GET  /api/orgs/:id/gateway/*   # proxied to the org's OpenClaw gateway
+GET  /api/orgs/:id/gateway/workstream.html   # workstream UI, auto-connected
+GET  /api/orgs/:id/logs        # tail container logs
+```
+
+Once an org is provisioned and started, open its workstream UI:
+
+> **http://localhost:3000/api/orgs/\<orgId\>/gateway/workstream.html**
+
+This is the same real-time channel view as the single-org setup, proxied through the
+platform with authentication.
+
+---
+
 ## Quick start
+
+### Single org (local dev)
 
 Requires **Node >= 22** and a `config-backup.json` in the repo root (model provider keys, channel tokens, agent defaults — not committed).
 
@@ -169,13 +293,28 @@ pnpm build
 scripts/workstream/reset-company.sh
 ```
 
-That single script handles everything: killing any running gateway, creating a fresh `~/.openclaw` directory, restoring credentials and sessions from the previous backup, writing `openclaw.json` from `config-backup.json`, and starting the gateway on port 18789.
+That single script handles everything: killing any running gateway, creating a fresh
+`~/.openclaw` directory, restoring credentials and sessions from the previous backup,
+writing `openclaw.json` from `config-backup.json`, and starting the gateway on port 18789.
 
-Once the gateway is running, open the workstream dashboard to watch agents communicate in real time:
+Once the gateway is running, open the workstream dashboard to watch agents communicate
+in real time:
 
 > **http://127.0.0.1:18789/workstream.html**
 
-From there, create your company through the dashboard and provision agents as needed.
+### Multi-org (platform mode)
+
+See the [Platform](#platform) section above. The short version:
+
+```bash
+cp config-backup.example.json config-backup.json   # add your API keys
+docker build -t openclaw:local .
+docker build -f Dockerfile.platform -t openclaw-platform .
+JWT_SECRET=change-me docker compose -f docker-compose.platform.yml up -d
+```
+
+Then open **http://localhost:3000**, sign up, create an org, provision it, and access
+its workstream UI — all through the dashboard.
 
 ## Roadmap
 
