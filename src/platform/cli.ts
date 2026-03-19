@@ -19,6 +19,7 @@ const config = {
     dataDir: process.env.CONTAINER_DATA_DIR || "/data/orgs",
     cpuLimit: process.env.CONTAINER_CPU_LIMIT,
     memoryLimit: process.env.CONTAINER_MEMORY_LIMIT,
+    configBackupPath: process.env.CONFIG_BACKUP_PATH || "/app/config-backup.json",
   },
   proxy: {
     timeout: parseInt(process.env.PROXY_TIMEOUT || "30000"),

@@ -26,6 +26,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-data:/data/orgs
+      - ./config-backup.json:/app/config-backup.json:ro
     ports:
       - "${PLATFORM_PORT:-3000}:3000"
     depends_on:

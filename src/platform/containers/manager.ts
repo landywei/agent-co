@@ -13,6 +13,7 @@ export interface ContainerManagerConfig {
   dataDir: string;
   cpuLimit?: string;
   memoryLimit?: string;
+  configBackupPath?: string;
 }
 
 export interface ContainerManager {
@@ -108,9 +109,70 @@ export async function createContainerManager(
     const orgDataDir = path.join(config.dataDir, orgId);
     const openclawDir = path.join(orgDataDir, ".openclaw");
     const workspaceDir = path.join(openclawDir, "workspace");
+    const skillsDir = path.join(openclawDir, "skills");
 
     await fs.mkdir(workspaceDir, { recursive: true });
+    await fs.mkdir(skillsDir, { recursive: true });
+
+    // Copy config-backup.json to org's openclaw.json (like reset-company.sh does)
+    const configBackupPath = config.configBackupPath || path.join(process.cwd(), "config-backup.json");
+    const orgConfigPath = path.join(openclawDir, "openclaw.json");
+
+    try {
+      const backupExists = await fs.stat(configBackupPath).then(() => true).catch(() => false);
+      if (backupExists) {
+        const backupContent = await fs.readFile(configBackupPath, "utf-8");
+        const backup = JSON.parse(backupContent);
+
+        // Transform config-backup.json format to openclaw.json format (same as reset-company.sh)
+        const cfg: Record<string, unknown> = {};
+
+        if (backup.models) {
+          cfg.models = { providers: {} };
+          for (const [k, v] of Object.entries(backup.models.providers || {})) {
+            (cfg.models as Record<string, unknown>).providers = {
+              ...((cfg.models as Record<string, unknown>).providers as Record<string, unknown>),
+              [k]: v,
+            };
+          }
+        }
+
+        // Copy all other keys using dot-notation path setting
+        for (const [k, v] of Object.entries(backup)) {
+          if (k === "models") continue;
+          setNestedPath(cfg, k, v);
+        }
+
+        await fs.writeFile(orgConfigPath, JSON.stringify(cfg, null, 2) + "\n");
+        log.info(`Created openclaw.json for org ${orgId} from config-backup.json`);
+      } else {
+        // Create minimal config if no backup exists
+        const minimalConfig = {
+          gateway: { mode: "local" },
+        };
+        await fs.writeFile(orgConfigPath, JSON.stringify(minimalConfig, null, 2) + "\n");
+        log.warn(`No config-backup.json found, created minimal config for org ${orgId}`);
+      }
+    } catch (error) {
+      log.error(`Failed to create config for org ${orgId}: ${String(error)}`);
+      // Create minimal config as fallback
+      const minimalConfig = { gateway: { mode: "local" } };
+      await fs.writeFile(orgConfigPath, JSON.stringify(minimalConfig, null, 2) + "\n");
+    }
+
     return orgDataDir;
+  }
+
+  function setNestedPath(obj: Record<string, unknown>, path: string, value: unknown): void {
+    const parts = path.split(".");
+    let cur: Record<string, unknown> = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!cur[parts[i]] || typeof cur[parts[i]] !== "object") {
+        cur[parts[i]] = {};
+      }
+      cur = cur[parts[i]] as Record<string, unknown>;
+    }
+    cur[parts[parts.length - 1]] = value;
   }
 
   function buildEnvVars(settings: OrgSettings): string[] {
