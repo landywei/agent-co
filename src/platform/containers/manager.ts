@@ -104,12 +104,46 @@ export async function createContainerManager(
     }
   }
 
-  async function ensureOrgDataDir(orgId: OrgId): Promise<string> {
+  async function ensureOrgDataDir(orgId: OrgId, settings: OrgSettings): Promise<string> {
     const orgDataDir = path.join(config.dataDir, orgId);
     const openclawDir = path.join(orgDataDir, ".openclaw");
     const workspaceDir = path.join(openclawDir, "workspace");
 
     await fs.mkdir(workspaceDir, { recursive: true });
+
+    // Create a basic config file for the org
+    const configPath = path.join(openclawDir, "config.json");
+    const orgConfig: Record<string, unknown> = {
+      "gateway.mode": "local",
+      "gateway.auth.token": settings.gatewayToken || "",
+    };
+
+    // Add model provider config if API keys are set
+    if (settings.anthropicApiKey) {
+      orgConfig["models"] = {
+        mode: "merge",
+        providers: {
+          anthropic: {
+            apiKey: settings.anthropicApiKey,
+          },
+        },
+      };
+      orgConfig["agents.defaults.model.primary"] = "anthropic/claude-sonnet-4-20250514";
+    } else if (settings.openaiApiKey) {
+      orgConfig["models"] = {
+        mode: "merge",
+        providers: {
+          openai: {
+            apiKey: settings.openaiApiKey,
+          },
+        },
+      };
+      orgConfig["agents.defaults.model.primary"] = "openai/gpt-4o";
+    }
+
+    await fs.writeFile(configPath, JSON.stringify(orgConfig, null, 2));
+    log.info(`Created config for org ${orgId}`);
+
     return orgDataDir;
   }
 
@@ -135,7 +169,7 @@ export async function createContainerManager(
 
       await ensureNetwork();
       const port = await findAvailablePort();
-      const orgDataDir = await ensureOrgDataDir(org.id);
+      const orgDataDir = await ensureOrgDataDir(org.id, org.settings);
       const name = containerName(org.id);
 
       const envVars = buildEnvVars(org.settings);
@@ -172,6 +206,7 @@ export async function createContainerManager(
         "lan",
         "--port",
         "18789",
+        "--allow-unconfigured",
       );
 
       const container: OrgContainer = {
