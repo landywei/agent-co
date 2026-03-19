@@ -16,7 +16,7 @@ services:
       CONTAINER_BASE_IMAGE: ${OPENCLAW_IMAGE:-openclaw:local}
       CONTAINER_PORT_RANGE_START: "19000"
       CONTAINER_PORT_RANGE_END: "19999"
-      CONTAINER_DATA_DIR: /data/orgs
+      CONTAINER_DATA_DIR: ${CONTAINER_DATA_DIR:-/var/lib/openclaw/orgs}
       CONTAINER_CPU_LIMIT: "1"
       CONTAINER_MEMORY_LIMIT: "2g"
       HEALTH_CHECK_INTERVAL: "30000"
@@ -25,7 +25,7 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - platform-data:/data/orgs
+      - ${CONTAINER_DATA_DIR:-/var/lib/openclaw/orgs}:${CONTAINER_DATA_DIR:-/var/lib/openclaw/orgs}
       - ./config-backup.json:/app/config-backup.json:ro
     ports:
       - "${PLATFORM_PORT:-3000}:3000"
@@ -82,5 +82,4 @@ networks:
 
 volumes:
   postgres-data:
-  platform-data:
   pgadmin-data:
