@@ -114,6 +114,19 @@ export async function createContainerManager(
     await fs.mkdir(workspaceDir, { recursive: true });
     await fs.mkdir(skillsDir, { recursive: true });
 
+    // Set ownership to node user (uid 1000) so org containers can write
+    // The org container runs as 'node' user which has uid 1000
+    try {
+      const { spawn } = await import("node:child_process");
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn("chown", ["-R", "1000:1000", openclawDir]);
+        proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`chown failed with code ${code}`))));
+        proc.on("error", reject);
+      });
+    } catch (error) {
+      log.warn(`Failed to set ownership for org ${orgId}: ${String(error)}`);
+    }
+
     // Copy config-backup.json to org's openclaw.json (like reset-company.sh does)
     const configBackupPath = config.configBackupPath || path.join(process.cwd(), "config-backup.json");
     const orgConfigPath = path.join(openclawDir, "openclaw.json");
