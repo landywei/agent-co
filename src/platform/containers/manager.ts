@@ -189,7 +189,11 @@ export async function createContainerManager(
   }
 
   function buildEnvVars(settings: OrgSettings): string[] {
-    const envVars: string[] = ["-e", "HOME=/home/node", "-e", "TERM=xterm-256color"];
+    const envVars: string[] = [
+      "-e", "HOME=/home/node",
+      "-e", "TERM=xterm-256color",
+      "-e", "OPENCLAW_ALLOW_INSECURE_CONTROL_UI=1",
+    ];
 
     if (settings.gatewayToken) {
       envVars.push("-e", `OPENCLAW_GATEWAY_TOKEN=${settings.gatewayToken}`);
