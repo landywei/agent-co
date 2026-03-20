@@ -21,9 +21,7 @@ export function createChannelReadTool(): AnyAgentTool {
   return {
     label: "Channel Read",
     name: "channel_read",
-    description:
-      "Read recent messages from a company channel. Use this to catch up on conversations " +
-      "or check what others have said before responding.",
+    description: "Read recent messages from a company channel.",
     parameters: ChannelReadToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

@@ -206,28 +206,63 @@ included in the core tool list above.
 
 ### 3.2 Tool Token Budget
 
-- Tool list in `## Tooling` prompt section: ~2,000-3,000 chars (~500-750 tokens)
+- Tool list in `## Tooling` prompt section: ~800-1,500 chars (~200-375 tokens) after summary compression
 - Tool schemas (sent as tool definitions in the API payload, separate from system prompt):
-  ~15,000-30,000 chars (~4,000-7,500 tokens) depending on tool count
+  ~4,000-8,000 chars (~1,000-2,000 tokens) after deny list and description trimming
 - Reported by `buildSystemPromptReport()` as `tools.listChars` and `tools.schemaChars`
+
+### 3.3 Tool Deny List (config-backup.json)
+
+The following tools are denied globally via `tools.deny` to reduce schema token overhead:
+
+| Tool               | Reason                                               |
+| ------------------ | ---------------------------------------------------- |
+| `canvas`           | Rarely used unless building UIs                      |
+| `nodes`            | Only needed with paired hardware                     |
+| `tts`              | Only needed if voice configured                      |
+| `browser`          | Heavy schema (~1,050 chars); only for web automation |
+| `image`            | Only needed if image model configured                |
+| `sessions_spawn`   | CEO-only orchestration                               |
+| `sessions_send`    | CEO-only orchestration                               |
+| `sessions_list`    | CEO-only orchestration                               |
+| `sessions_history` | CEO-only orchestration                               |
+| `subagents`        | CEO-only orchestration                               |
+| `agents_list`      | CEO-only orchestration                               |
+
+Additionally, `agents_create` is denied per-agent on employees (CEO retains it).
+
+All plugins are denied via `plugins.deny` to eliminate plugin tool schema overhead.
+Re-enable specific plugins as needed.
 
 ---
 
 ## 4. Prompt Size Budget
 
-### 4.1 Typical Full Employee Prompt
+### 4.1 Typical Full Employee Prompt (after optimization)
 
-| Component                                               | Chars (approx)      | Tokens (approx)    |
-| ------------------------------------------------------- | ------------------- | ------------------ |
-| Core fixed sections (Identity through Runtime)          | 7,200 - 9,000       | 1,800 - 2,250      |
-| Project Context (SOUL.md, IDENTITY.md, AGENTS.md, etc.) | 5,500 - 9,000       | 1,400 - 2,250      |
-| Extra system prompt (inbound meta + group context)      | 450 - 750           | 110 - 190          |
-| **Total system prompt**                                 | **13,000 - 19,000** | **3,300 - 4,700**  |
-| Tool schemas (API payload, not in prompt text)          | 15,000 - 30,000     | 4,000 - 7,500      |
-| **Effective context consumed before user message**      | **28,000 - 49,000** | **7,300 - 12,200** |
+| Component                                               | Chars (approx)      | Tokens (approx)   |
+| ------------------------------------------------------- | ------------------- | ----------------- |
+| Core fixed sections (Identity through Runtime)          | 4,500 - 6,000       | 1,100 - 1,500     |
+| Project Context (SOUL.md, IDENTITY.md, AGENTS.md, etc.) | 5,500 - 9,000       | 1,400 - 2,250     |
+| Extra system prompt (inbound meta + group context)      | 450 - 750           | 110 - 190         |
+| **Total system prompt**                                 | **10,500 - 15,750** | **2,600 - 3,940** |
+| Tool schemas (API payload, not in prompt text)          | 4,000 - 8,000       | 1,000 - 2,000     |
+| **Effective context consumed before user message**      | **14,500 - 23,750** | **3,600 - 5,940** |
 
-After deduplication (removed ~3,000 chars from bootstrap templates and ~300 chars from core
-prompt), the total system prompt is approximately 15-20% smaller than before.
+Compared to pre-optimization (7,300-12,200 tokens), this represents a ~50% reduction in
+pre-message context overhead.
+
+### Changes applied
+
+- Compressed Task-Based Work section (~24 lines to ~6 lines)
+- Compressed Silent Replies section (~12 lines to ~2 lines)
+- Compressed CLI Quick Reference (gated on `hasGateway`, 6 lines to 2 lines)
+- Gated Reply Tags on `replyto` capability
+- Trimmed coreToolSummaries (cron, agents_create, task_manage, task_read, session_status)
+- Trimmed tool `description` strings on tool objects (gateway, task_manage, task_read,
+  session_status, channel_post/read/manage, web_search, web_fetch)
+- Denied 11 tools globally + 1 per-agent (agents_create for employees)
+- Denied all plugins globally
 
 Token estimation uses the `≈4 chars/token` heuristic from
 `estimateTokensFromChars()` in `src/auto-reply/reply/commands-context-report.ts`.

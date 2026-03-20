@@ -119,7 +119,11 @@ export async function createContainerManager(
     }
   }
 
-  async function ensureOrgDataDir(orgId: OrgId, gatewayToken: string): Promise<string> {
+  async function ensureOrgDataDir(
+    orgId: OrgId,
+    gatewayToken: string,
+    orgSettings?: OrgSettings,
+  ): Promise<string> {
     const orgDataDir = path.join(config.dataDir, orgId);
     const openclawDir = path.join(orgDataDir, ".openclaw");
     const workspaceDir = path.join(openclawDir, "workspace");
@@ -167,6 +171,25 @@ export async function createContainerManager(
         // Always overwrite gateway.auth.token with the platform-managed token so
         // the value in openclaw.json, the env var, and the DB settings stay in sync.
         setNestedPath(cfg, "gateway.auth.token", gatewayToken);
+
+        // Merge org-level tool/plugin policy overrides from OrgSettings.
+        if (orgSettings?.tools?.deny) {
+          const existing = (cfg.tools as Record<string, unknown>)?.deny;
+          const merged = Array.from(
+            new Set([...(Array.isArray(existing) ? existing : []), ...orgSettings.tools.deny]),
+          );
+          setNestedPath(cfg, "tools.deny", merged);
+        }
+        if (orgSettings?.tools?.profile) {
+          setNestedPath(cfg, "tools.profile", orgSettings.tools.profile);
+        }
+        if (orgSettings?.plugins?.deny) {
+          const existing = (cfg.plugins as Record<string, unknown>)?.deny;
+          const merged = Array.from(
+            new Set([...(Array.isArray(existing) ? existing : []), ...orgSettings.plugins.deny]),
+          );
+          setNestedPath(cfg, "plugins.deny", merged);
+        }
 
         await fs.writeFile(orgConfigPath, JSON.stringify(cfg, null, 2) + "\n");
         log.info(`Created openclaw.json for org ${orgId} from config-backup.json`);
@@ -262,7 +285,7 @@ export async function createContainerManager(
         );
       }
 
-      const orgDataDir = await ensureOrgDataDir(org.id, settings.gatewayToken!);
+      const orgDataDir = await ensureOrgDataDir(org.id, settings.gatewayToken!, settings);
 
       const envVars = buildEnvVars(settings);
       const resourceLimits: string[] = [];

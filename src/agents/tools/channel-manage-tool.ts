@@ -27,9 +27,7 @@ export function createChannelManageTool(opts?: { agentSessionKey?: string }): An
   return {
     label: "Channel Manage",
     name: "channel_manage",
-    description:
-      "Manage company channels: create new channels, add/remove members, or list all channels. " +
-      "Use this to set up team communication structure.",
+    description: "Manage company channels: create, add/remove members, list.",
     parameters: ChannelManageToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

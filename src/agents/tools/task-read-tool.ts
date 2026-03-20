@@ -24,9 +24,7 @@ export function createTaskReadTool(opts?: { agentSessionKey?: string }): AnyAgen
   return {
     label: "Task Reader",
     name: "task_read",
-    description:
-      "Read task information. List tasks, view task details with logs, or get an organizational summary. " +
-      "Use 'my_tasks' to see your own active work. Use 'summary' to see the overall company task status.",
+    description: "Read tasks: list, detail, my_tasks, summary.",
     parameters: TaskReadToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

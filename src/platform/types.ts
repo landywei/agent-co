@@ -17,12 +17,23 @@ export interface Org {
   settings: OrgSettings;
 }
 
+export interface OrgToolsSettings {
+  deny?: string[];
+  profile?: "minimal" | "coding" | "messaging" | "full";
+}
+
+export interface OrgPluginsSettings {
+  deny?: string[];
+}
+
 export interface OrgSettings {
   anthropicApiKey?: string;
   openaiApiKey?: string;
   gatewayToken?: string;
   maxAgents?: number;
   maxWorkspaceSize?: number;
+  tools?: OrgToolsSettings;
+  plugins?: OrgPluginsSettings;
 }
 
 export interface User {

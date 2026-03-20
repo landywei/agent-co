@@ -63,6 +63,7 @@ export function createAgentsCreateTool(): AnyAgentTool {
           agentId,
           name: rawName,
           workspace: workspaceDir,
+          tools: { deny: ["agents_create"] },
         });
         const agentDir = resolveAgentDir(nextConfig, agentId);
         nextConfig = applyAgentConfig(nextConfig, { agentId, agentDir });

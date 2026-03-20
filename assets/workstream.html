@@ -918,6 +918,25 @@ const ACCESS = ['full','elevated','standard','readonly'];
 const BASE_WORKSPACE = '~/.openclaw/workspaces';
 const PUBLIC_WORKSPACE = '~/.openclaw/workspace/public';
 
+// Platform proxy auth: when loaded via platform proxy with ?token=<jwt>,
+// inject the Authorization header into all relative-URL fetch calls so they
+// pass through the platform's requireAuth middleware.
+const _platformJwt = (() => {
+  try { return new URLSearchParams(location.search).get('token') || ''; } catch { return ''; }
+})();
+if (_platformJwt) {
+  const _origFetch = window.fetch;
+  window.fetch = function(input, init) {
+    if (typeof input === 'string' && !input.startsWith('http')) {
+      init = Object.assign({}, init);
+      const h = new Headers(init.headers || {});
+      if (!h.has('Authorization')) h.set('Authorization', 'Bearer ' + _platformJwt);
+      init.headers = h;
+    }
+    return _origFetch.call(this, input, init);
+  };
+}
+
 let state = { positions: [], selectedId: null, activeTab: 'details', view: 'org', kb: {}, kbSelected: null, deployed: false, deployedIds: [], channels: [], selectedChannelId: null, companyGoal: '', tasks: [], taskSummary: null, selectedTaskId: null, taskLogs: {}, orgStatus: null };
 
 /* ═══════════════════════════════════════
@@ -2652,7 +2671,7 @@ let taskRefreshTimer = null;
 
 async function refreshOrgStatus() {
   try {
-    const r = await fetch('/agents-status.json');
+    const r = await fetch('agents-status.json');
     if (!r.ok) { return; }
     state.orgStatus = await r.json();
     if (state.view === 'tasks') {
@@ -2663,7 +2682,7 @@ async function refreshOrgStatus() {
 
 async function refreshTasks() {
   try {
-    const r = await fetch('/tasks-data.json');
+    const r = await fetch('tasks-data.json');
     if (!r.ok) return;
     const d = await r.json();
     state.tasks = d.tasks || [];
@@ -2682,7 +2701,7 @@ async function refreshTasks() {
 
 async function fetchTaskLogs(taskId) {
   try {
-    const r = await fetch(`/tasks-data.json?view=detail&taskId=${encodeURIComponent(taskId)}`);
+    const r = await fetch(`tasks-data.json?view=detail&taskId=${encodeURIComponent(taskId)}`);
     if (!r.ok) return;
     const d = await r.json();
     state.taskLogs[taskId] = d.logs || [];

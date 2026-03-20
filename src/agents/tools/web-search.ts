@@ -742,10 +742,10 @@ export function createWebSearchTool(options?: {
 
   const description =
     provider === "perplexity"
-      ? "Search the web using Perplexity Sonar (direct or via OpenRouter). Returns AI-synthesized answers with citations from real-time web search."
+      ? "Search the web via Perplexity Sonar. Returns AI-synthesized answers with citations."
       : provider === "grok"
-        ? "Search the web using xAI Grok. Returns AI-synthesized answers with citations from real-time web search."
-        : "Search the web using Brave Search API. Supports region-specific and localized search via country and language parameters. Returns titles, URLs, and snippets for fast research.";
+        ? "Search the web via xAI Grok. Returns AI-synthesized answers with citations."
+        : "Search the web via Brave Search API. Returns titles, URLs, and snippets.";
 
   return {
     label: "Web Search",

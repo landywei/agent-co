@@ -34,10 +34,7 @@ export function createTaskManageTool(opts?: { agentSessionKey?: string }): AnyAg
   return {
     label: "Task Manager",
     name: "task_manage",
-    description:
-      "Manage your task threads. Create new tasks, update progress, send heartbeats, and log decisions. " +
-      "Use heartbeats regularly while working on long tasks so the system knows you are active. " +
-      "Use 'log' to record important decisions and checkpoints.",
+    description: "Manage task threads: create, update, heartbeat, log, complete.",
     parameters: TaskManageToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;
