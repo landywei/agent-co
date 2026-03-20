@@ -15,9 +15,7 @@ export function createChannelPostTool(opts?: { agentSessionKey?: string }): AnyA
   return {
     label: "Channel Post",
     name: "channel_post",
-    description:
-      "Post a message to a company channel. Use this to communicate with other team members. " +
-      "All channel members will see your message.",
+    description: "Post a message to a company channel.",
     parameters: ChannelPostToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

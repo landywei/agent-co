@@ -179,8 +179,7 @@ export function createSessionStatusTool(opts?: {
   return {
     label: "Session Status",
     name: "session_status",
-    description:
-      "Show a /status-equivalent session status card (usage + time + cost when available). Use for model-use questions (📊 session_status). Optional: set per-session model override (model=default resets overrides).",
+    description: "Show session status (usage, time, cost). Optional per-session model override.",
     parameters: SessionStatusToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;

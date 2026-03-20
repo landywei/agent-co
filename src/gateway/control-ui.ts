@@ -23,6 +23,8 @@ export type ControlUiRequestOptions = {
   config?: OpenClawConfig;
   agentId?: string;
   root?: ControlUiRootState;
+  /** Resolved gateway auth token for bootstrap pass-through. */
+  resolvedAuthToken?: string;
 };
 
 export type ControlUiRootState =
@@ -271,12 +273,16 @@ export function handleControlUiHttpRequest(
       res.end();
       return true;
     }
-    sendJson(res, 200, {
+    const bootstrapPayload: ControlUiBootstrapConfig = {
       basePath,
       assistantName: identity.name,
       assistantAvatar: avatarValue ?? identity.avatar,
       assistantAgentId: identity.agentId,
-    } satisfies ControlUiBootstrapConfig);
+    };
+    if (config?.gateway?.controlUi?.dangerouslyDisableDeviceAuth && opts?.resolvedAuthToken) {
+      bootstrapPayload.authToken = opts.resolvedAuthToken;
+    }
+    sendJson(res, 200, bootstrapPayload);
     return true;
   }
 

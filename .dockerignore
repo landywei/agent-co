@@ -49,6 +49,10 @@ vendor/
 
 # Needed for building the Canvas A2UI bundle during Docker image builds.
 # Keep the rest of apps/ and vendor/ excluded to avoid a large build context.
+# Include the standalone workstream dashboard asset so `/workstream.html`
+# is available inside Dockerized gateways.
+!assets/
+!assets/workstream.html
 !apps/shared/
 !apps/shared/OpenClawKit/
 !apps/shared/OpenClawKit/Tools/

@@ -104,8 +104,8 @@ function buildTimeSection(params: { userTimezone?: string }) {
   return ["## Current Date & Time", `Time zone: ${params.userTimezone}`, ""];
 }
 
-function buildReplyTagsSection(isMinimal: boolean) {
-  if (isMinimal) {
+function buildReplyTagsSection(isMinimal: boolean, capabilities: Set<string>) {
+  if (isMinimal || !capabilities.has("replyto")) {
     return [];
   }
   return [
@@ -261,26 +261,22 @@ export function buildAgentSystemPrompt(params: {
     browser: "Control web browser",
     canvas: "Present/eval/snapshot the Canvas",
     nodes: "List/describe/notify/camera/screen on paired nodes",
-    cron: "Manage cron jobs and wake events (use for reminders; when scheduling a reminder, write the systemEvent text as something that will read like a reminder when it fires, and mention that it is a reminder depending on the time gap between setting and firing; include recent context in reminder text if appropriate)",
+    cron: "Manage cron jobs, reminders, and wake events",
     message: "Send messages and channel actions",
-    gateway: "Restart, apply config, or run updates on the running OpenClaw process",
-    agents_list: "List agent ids allowed for sessions_spawn",
-    sessions_list: "List other sessions (incl. sub-agents) with filters/last",
-    sessions_history: "Fetch history for another session/sub-agent",
+    gateway: "Restart, apply config, or update the gateway",
+    agents_list: "List agent ids",
+    sessions_list: "List sessions (incl. sub-agents)",
+    sessions_history: "Fetch session history",
     channel_post: "Post a message to a company channel",
     channel_read: "Read recent messages from a company channel",
     channel_manage: "Create channels, add/remove members, list channels",
-    sessions_send: "Send a message to a sub-agent session",
+    sessions_send: "Send a message to a session",
     sessions_spawn: "Spawn a sub-agent session",
-    subagents: "List, steer, or kill sub-agent runs for this requester session",
-    session_status:
-      "Show a /status-equivalent status card (usage + time + Reasoning/Verbose/Elevated); use for model-use questions (📊 session_status); optional per-session model override",
-    agents_create:
-      "Hire (create) a new agent. This registers the agent in the gateway config, creates its workspace with default files, and auto-restarts the gateway so the agent becomes available. After hiring, add the agent to channels and write instructions to their workspace SOUL.md via file tools.",
-    task_manage:
-      "Manage your task threads. Create new tasks, update progress, send heartbeats, and log decisions. Use heartbeats regularly while working on long tasks so the system knows you are active. Use 'log' to record important decisions and checkpoints.",
-    task_read:
-      "Read task information. List tasks, view task details with logs, or get an organizational summary. Use 'my_tasks' to see your own active work. Use 'summary' to see the overall company task status.",
+    subagents: "List, steer, or kill sub-agent runs",
+    session_status: "Show status card (usage, time, model); per-session model override",
+    agents_create: "Hire a new agent (registers in config, creates workspace, restarts gateway)",
+    task_manage: "Manage task threads: create, update, heartbeat, log",
+    task_read: "Read tasks: list, details, summary",
     image: "Analyze an image with the configured image model",
   };
 
@@ -486,45 +482,23 @@ export function buildAgentSystemPrompt(params: {
     "Do not poll `subagents list` / `sessions_list` in a loop; only check status on-demand (for intervention, debugging, or when explicitly asked).",
     "",
     "## Task-Based Work",
-    "All real work MUST be task-based. Follow this workflow:",
-    "1. **Create a task** via task_manage(action=create) before starting any non-trivial work. This makes your work visible and trackable.",
-    "2. **Do the work** within that task context: use exec, write, read, edit, and other tools to produce real artifacts. For complex development (building apps, services, features), use the coding-agent skill to spawn a real coding agent (Codex, Claude Code, Pi) — do not hand-write large codebases yourself.",
-    "3. **Send heartbeats** via task_manage(action=heartbeat) regularly during long-running work.",
-    "4. **Log progress** via task_manage(action=log) at checkpoints.",
-    "5. **Complete the task** via task_manage(action=complete) only after verifying the work is done.",
-    "",
-    "### Verification Before Completion",
-    "NEVER claim work is done without tool-verified evidence:",
-    `- Built something? Run it: ${execToolName}("npm run build") or ${execToolName}("python main.py") and check the output.`,
-    `- Started a service? Verify it: ${execToolName}("curl localhost:PORT") or ${execToolName}("lsof -i :PORT").`,
-    `- Wrote code? Confirm the files exist: ${readToolName}(path) the output.`,
-    "- If verification fails, fix the issue — do not report success.",
-    "",
-    "### Channel Posts Are for Communication Only",
-    "channel_post is for status updates, questions, and coordination with other agents — NOT for doing work.",
-    "Posting code snippets in a channel message does NOT count as writing code. Use write/edit tools to create real files.",
-    'Posting "service is live" does NOT make it live. Start it with exec and verify with exec.',
-    "",
-    "### Delegation for Complex Work",
-    "If a task is more complex or takes longer, spawn a sub-agent via sessions_spawn. Completion is push-based: it will auto-announce when done.",
-    "For building/coding tasks, prefer the coding-agent skill (spawns Codex/Claude Code/Pi in background) over hand-writing code in bulk.",
+    "All non-trivial work MUST use tasks: task_manage(create) → do work → heartbeat regularly → log checkpoints → complete after verification.",
+    "NEVER claim done without tool-verified evidence (run builds, curl endpoints, read files). Fix failures before reporting success.",
+    "channel_post is for communication only — not for doing work. Use write/edit/exec for real artifacts.",
+    "For complex coding, prefer the coding-agent skill (spawns Codex/Claude Code/Pi) over hand-writing large codebases.",
     "",
     "## Tool Call Style",
-    "Default: do not narrate routine, low-risk tool calls (just call the tool).",
-    "Narrate only when it helps: multi-step work, complex/challenging problems, sensitive actions (e.g., deletions), or when explicitly asked.",
-    "Keep narration brief and value-dense; avoid repeating obvious steps.",
-    "Use plain human language for narration unless in a technical context.",
+    "Do not narrate routine tool calls. Narrate only for multi-step, complex, or sensitive work.",
     "",
     ...safetySection,
-    "## OpenClaw CLI Quick Reference",
-    "OpenClaw is controlled via subcommands. Do not invent commands.",
-    "To manage the Gateway daemon service (start/stop/restart):",
-    "- openclaw gateway status",
-    "- openclaw gateway start",
-    "- openclaw gateway stop",
-    "- openclaw gateway restart",
-    "Run `openclaw help` (or `openclaw gateway --help`) to discover available commands.",
-    "",
+    ...(hasGateway
+      ? [
+          "## OpenClaw CLI Quick Reference",
+          "OpenClaw is controlled via subcommands. Do not invent commands.",
+          "Gateway: openclaw gateway status|start|stop|restart. Run `openclaw help` to discover commands.",
+          "",
+        ]
+      : []),
     ...skillsSection,
     ...memorySection,
     // Skip self-update for subagent/none modes
@@ -609,7 +583,7 @@ export function buildAgentSystemPrompt(params: {
     "## Workspace Files (injected)",
     "These workspace files are loaded by OpenClaw and included below in Project Context.",
     "",
-    ...buildReplyTagsSection(isMinimal),
+    ...buildReplyTagsSection(isMinimal, runtimeCapabilitiesLower),
     ...buildMessagingSection({
       isMinimal,
       isCeo,
@@ -679,16 +653,7 @@ export function buildAgentSystemPrompt(params: {
   if (!isMinimal) {
     lines.push(
       "## Silent Replies",
-      `When you have nothing to say, respond with ONLY: ${SILENT_REPLY_TOKEN}`,
-      "",
-      "⚠️ Rules:",
-      "- It must be your ENTIRE message — nothing else",
-      `- Never append it to an actual response (never include "${SILENT_REPLY_TOKEN}" in real replies)`,
-      "- Never wrap it in markdown or code blocks",
-      "",
-      `❌ Wrong: "Here's help... ${SILENT_REPLY_TOKEN}"`,
-      `❌ Wrong: "${SILENT_REPLY_TOKEN}"`,
-      `✅ Right: ${SILENT_REPLY_TOKEN}`,
+      `When you have nothing to say, respond with ONLY: ${SILENT_REPLY_TOKEN} (must be your entire message, never appended to real content).`,
       "",
     );
   }

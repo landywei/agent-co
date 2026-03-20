@@ -59,6 +59,15 @@ export async function startGatewaySidecars(params: {
     params.log.warn(`session lock cleanup failed on startup: ${String(err)}`);
   }
 
+  // Warn if web search is effectively disabled (no API key and not explicitly off).
+  const webSearchCfg = params.cfg.tools?.web?.search;
+  if (webSearchCfg?.enabled !== false && !webSearchCfg?.apiKey && !process.env.BRAVE_API_KEY) {
+    params.log.warn(
+      "web_search tool is unavailable: no Brave API key configured. " +
+        "Set tools.web.search.apiKey or BRAVE_API_KEY env var to enable web search.",
+    );
+  }
+
   // Start OpenClaw browser control server (unless disabled via config).
   let browserControl: Awaited<ReturnType<typeof startBrowserControlServerIfEnabled>> = null;
   try {

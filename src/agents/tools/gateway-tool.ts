@@ -71,7 +71,7 @@ export function createGatewayTool(opts?: {
     name: "gateway",
     ownerOnly: true,
     description:
-      "Restart, apply config, or update the gateway in-place (SIGUSR1). Use config.patch for safe partial config updates (merges with existing). Use config.apply only when replacing entire config. Both trigger restart after writing. Always pass a human-readable completion message via the `note` parameter so the system can deliver it to the user after restart.",
+      "Restart, apply config, or update the gateway. Use config.patch for partial updates, config.apply for full replacement. Pass a `note` for post-restart delivery.",
     parameters: GatewayToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;
